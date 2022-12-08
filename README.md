@@ -1,4 +1,4 @@
-# wombatsqlite
+# Wombat SQLite
 SQLite Forensic Tool
 
 SQLite forensic tool which will include tagging and html reporting for specific columns from rows from tables in a db. The tool will parse the db separate from the wal to distinguish between the different states/versions of the database and hopefully provide it in a meaningful output which will provide an indication of what changes occurred, i.e. update, insert, etc.
