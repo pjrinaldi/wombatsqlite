@@ -13,9 +13,13 @@
 #include <QtGui/QIcon>
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QSpacerItem>
+#include <QtWidgets/QSpinBox>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTableView>
@@ -38,6 +42,11 @@ public:
     QAction *actionPublish;
     QWidget *centralwidget;
     QVBoxLayout *verticalLayout;
+    QHBoxLayout *horizontalLayout;
+    QLabel *label;
+    QSpinBox *pagespinbox;
+    QLabel *countlabel;
+    QSpacerItem *horizontalSpacer;
     QSplitter *splitter_2;
     QTreeWidget *treewidget;
     QSplitter *splitter;
@@ -87,6 +96,42 @@ public:
         verticalLayout->setSpacing(6);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
         verticalLayout->setContentsMargins(0, 0, 0, 0);
+        horizontalLayout = new QHBoxLayout();
+        horizontalLayout->setSpacing(6);
+        horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
+        label = new QLabel(centralwidget);
+        label->setObjectName(QString::fromUtf8("label"));
+        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(label->sizePolicy().hasHeightForWidth());
+        label->setSizePolicy(sizePolicy);
+        label->setMinimumSize(QSize(0, 0));
+        label->setMaximumSize(QSize(16777215, 26));
+
+        horizontalLayout->addWidget(label);
+
+        pagespinbox = new QSpinBox(centralwidget);
+        pagespinbox->setObjectName(QString::fromUtf8("pagespinbox"));
+        pagespinbox->setMaximumSize(QSize(16777215, 26));
+        pagespinbox->setMinimum(1);
+
+        horizontalLayout->addWidget(pagespinbox);
+
+        countlabel = new QLabel(centralwidget);
+        countlabel->setObjectName(QString::fromUtf8("countlabel"));
+        countlabel->setMinimumSize(QSize(0, 0));
+        countlabel->setMaximumSize(QSize(16777215, 26));
+
+        horizontalLayout->addWidget(countlabel);
+
+        horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout->addItem(horizontalSpacer);
+
+
+        verticalLayout->addLayout(horizontalLayout);
+
         splitter_2 = new QSplitter(centralwidget);
         splitter_2->setObjectName(QString::fromUtf8("splitter_2"));
         splitter_2->setOrientation(Qt::Horizontal);
@@ -102,22 +147,22 @@ public:
         treewidget->header()->setVisible(true);
         splitter = new QSplitter(splitter_2);
         splitter->setObjectName(QString::fromUtf8("splitter"));
-        QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        sizePolicy.setHorizontalStretch(1);
-        sizePolicy.setVerticalStretch(0);
-        sizePolicy.setHeightForWidth(splitter->sizePolicy().hasHeightForWidth());
-        splitter->setSizePolicy(sizePolicy);
+        QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        sizePolicy1.setHorizontalStretch(1);
+        sizePolicy1.setVerticalStretch(0);
+        sizePolicy1.setHeightForWidth(splitter->sizePolicy().hasHeightForWidth());
+        splitter->setSizePolicy(sizePolicy1);
         splitter->setOrientation(Qt::Vertical);
         textedit = new QTextEdit(splitter);
         textedit->setObjectName(QString::fromUtf8("textedit"));
-        sizePolicy.setHeightForWidth(textedit->sizePolicy().hasHeightForWidth());
-        textedit->setSizePolicy(sizePolicy);
+        sizePolicy1.setHeightForWidth(textedit->sizePolicy().hasHeightForWidth());
+        textedit->setSizePolicy(sizePolicy1);
         textedit->setReadOnly(true);
         splitter->addWidget(textedit);
         tablewidget = new QTableWidget(splitter);
         tablewidget->setObjectName(QString::fromUtf8("tablewidget"));
-        sizePolicy.setHeightForWidth(tablewidget->sizePolicy().hasHeightForWidth());
-        tablewidget->setSizePolicy(sizePolicy);
+        sizePolicy1.setHeightForWidth(tablewidget->sizePolicy().hasHeightForWidth());
+        tablewidget->setSizePolicy(sizePolicy1);
         splitter->addWidget(tablewidget);
         splitter_2->addWidget(splitter);
         propwidget = new QTableView(splitter_2);
@@ -184,6 +229,8 @@ public:
 #if QT_CONFIG(shortcut)
         actionPublish->setShortcut(QCoreApplication::translate("WombatSqlite", "Ctrl+G", nullptr));
 #endif // QT_CONFIG(shortcut)
+        label->setText(QCoreApplication::translate("WombatSqlite", "Page: ", nullptr));
+        countlabel->setText(QCoreApplication::translate("WombatSqlite", "of ", nullptr));
         textedit->setDocumentTitle(QString());
         toolBar->setWindowTitle(QCoreApplication::translate("WombatSqlite", "toolBar", nullptr));
     } // retranslateUi

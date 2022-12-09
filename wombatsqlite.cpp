@@ -631,6 +631,9 @@ void WombatSqlite::LoadSqliteFile(void)
         rootitem->setText(0, dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
         rootitem->setToolTip(0, dbpath + "," + QString::number(filetype));
         ui->treewidget->addTopLevelItem(rootitem);
+        //ui->pagespinbox
+        ui->pagespinbox->setMaximum(pagecount);
+        ui->countlabel->setText("of " + QString::number(pagecount) + " pages");
         StatusUpdate("SQLite File: " + dbpath + " successfully opened.");
     }
     else
