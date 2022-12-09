@@ -36,10 +36,14 @@ class WombatSqlite : public QMainWindow
 public:
     explicit WombatSqlite(QWidget* parent = 0);
     ~WombatSqlite();
-    void LoadRegistryFile(void);
+    //void LoadRegistryFile(void);
+    //void LoadWalFile(void);
+    //void LoadDatabaseFile(void);
+    //void LoadJournalFile(void);
+    void LoadSqliteFile(void);
 
 private slots:
-    void OpenHive(void);
+    void OpenDB(void);
     void ManageTags(void);
     void PreviewReport(void);
     void PublishReport(void);
@@ -57,20 +61,23 @@ private slots:
         statuslabel->setText(tmptext);
     };
 protected:
-    void closeEvent(QCloseEvent* event);
+    //void closeEvent(QCloseEvent* event);
 
 private:
     Ui::WombatSqlite* ui;
     QLabel* statuslabel;
-    QString hivefilepath;
-    QString prevhivepath;
-    QFile hivefile;
+    QString dbpath;
+    QString olddbpath;
+    QFile dbfile;
+    quint8 filetype = 0;
+    quint64 pagecount = 0;
+    quint32 pagesize = 0;
     //void PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* curerr);
     QString DecryptRot13(QString encstr);
     QChar Rot13Char(QChar curchar);
     QString ConvertUnixTimeToString(uint32_t input);
     QString ConvertWindowsTimeToUnixTimeUTC(uint64_t input);
-    int GetRootIndex(QTreeWidgetItem* curitem);
+    //int GetRootIndex(QTreeWidgetItem* curitem);
     QMenu* tagmenu;
     QAction* newtagaction;
     QAction* remtagaction;
@@ -83,6 +90,7 @@ private:
     QStringList tags;
     QStringList taggeditems;
     QStringList hives;
+    QStringList dbfiles;
 };
 
 #endif // WOMBATSQLITE_H

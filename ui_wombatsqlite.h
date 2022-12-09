@@ -16,10 +16,11 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
-#include <QtWidgets/QPlainTextEdit>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QStatusBar>
+#include <QtWidgets/QTableView>
 #include <QtWidgets/QTableWidget>
+#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QVBoxLayout>
@@ -40,8 +41,9 @@ public:
     QSplitter *splitter_2;
     QTreeWidget *treewidget;
     QSplitter *splitter;
+    QTextEdit *textedit;
     QTableWidget *tablewidget;
-    QPlainTextEdit *plaintext;
+    QTableView *propwidget;
     QMenuBar *menubar;
     QStatusBar *statusbar;
     QToolBar *toolBar;
@@ -93,36 +95,34 @@ public:
         __qtreewidgetitem->setText(0, QString::fromUtf8("1"));
         treewidget->setHeaderItem(__qtreewidgetitem);
         treewidget->setObjectName(QString::fromUtf8("treewidget"));
-        treewidget->setSelectionBehavior(QAbstractItemView::SelectItems);
+        treewidget->setProperty("showDropIndicator", QVariant(false));
+        treewidget->setAlternatingRowColors(true);
+        treewidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         splitter_2->addWidget(treewidget);
-        treewidget->header()->setVisible(false);
+        treewidget->header()->setVisible(true);
         splitter = new QSplitter(splitter_2);
         splitter->setObjectName(QString::fromUtf8("splitter"));
-        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         sizePolicy.setHorizontalStretch(1);
         sizePolicy.setVerticalStretch(0);
         sizePolicy.setHeightForWidth(splitter->sizePolicy().hasHeightForWidth());
         splitter->setSizePolicy(sizePolicy);
         splitter->setOrientation(Qt::Vertical);
+        textedit = new QTextEdit(splitter);
+        textedit->setObjectName(QString::fromUtf8("textedit"));
+        sizePolicy.setHeightForWidth(textedit->sizePolicy().hasHeightForWidth());
+        textedit->setSizePolicy(sizePolicy);
+        textedit->setReadOnly(true);
+        splitter->addWidget(textedit);
         tablewidget = new QTableWidget(splitter);
-        if (tablewidget->columnCount() < 3)
-            tablewidget->setColumnCount(3);
         tablewidget->setObjectName(QString::fromUtf8("tablewidget"));
-        tablewidget->setAlternatingRowColors(true);
-        tablewidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-        tablewidget->setColumnCount(3);
+        sizePolicy.setHeightForWidth(tablewidget->sizePolicy().hasHeightForWidth());
+        tablewidget->setSizePolicy(sizePolicy);
         splitter->addWidget(tablewidget);
-        tablewidget->horizontalHeader()->setCascadingSectionResizes(true);
-        tablewidget->horizontalHeader()->setStretchLastSection(true);
-        tablewidget->verticalHeader()->setVisible(false);
-        plaintext = new QPlainTextEdit(splitter);
-        plaintext->setObjectName(QString::fromUtf8("plaintext"));
-        QFont font;
-        font.setFamily(QString::fromUtf8("Source Code Pro"));
-        plaintext->setFont(font);
-        plaintext->setReadOnly(true);
-        splitter->addWidget(plaintext);
         splitter_2->addWidget(splitter);
+        propwidget = new QTableView(splitter_2);
+        propwidget->setObjectName(QString::fromUtf8("propwidget"));
+        splitter_2->addWidget(propwidget);
 
         verticalLayout->addWidget(splitter_2);
 
@@ -184,6 +184,7 @@ public:
 #if QT_CONFIG(shortcut)
         actionPublish->setShortcut(QCoreApplication::translate("WombatSqlite", "Ctrl+G", nullptr));
 #endif // QT_CONFIG(shortcut)
+        textedit->setDocumentTitle(QString());
         toolBar->setWindowTitle(QCoreApplication::translate("WombatSqlite", "toolBar", nullptr));
     } // retranslateUi
 

@@ -10,8 +10,9 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     statuslabel = new QLabel(this);
     this->statusBar()->addPermanentWidget(statuslabel, 0);
     StatusUpdate("Open a SQLite DB,WAL, or journal to Begin");
-    ui->tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Value Name", "Value Type"});
+    connect(ui->actionOpenDB, SIGNAL(triggered()), this, SLOT(OpenDB()), Qt::DirectConnection);
+    //ui->tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    //ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Value Name", "Value Type"});
     /*
     connect(ui->treewidget, SIGNAL(itemSelectionChanged()), this, SLOT(KeySelected()), Qt::DirectConnection);
     connect(ui->tablewidget, SIGNAL(itemSelectionChanged()), this, SLOT(ValueSelected()), Qt::DirectConnection);
@@ -47,9 +48,59 @@ WombatSqlite::~WombatSqlite()
     //tmpdir.removeRecursively();
 }
 
-void WombatSqlite::OpenHive()
+void WombatSqlite::OpenDB()
 {
+    if(olddbpath.isEmpty())
+        olddbpath = QDir::homePath();
+    QFileDialog opendbdialog(this, tr("Open SQLite File"), olddbpath);
+    opendbdialog.setLabelText(QFileDialog::Accept, "Open");
+    if(opendbdialog.exec())
+    {
+        dbpath = opendbdialog.selectedFiles().first();
+        olddbpath = dbpath;
+        dbfiles.append(dbpath);
+        dbfile.setFileName(dbpath);
+        if(!dbfile.isOpen())
+            dbfile.open(QIODevice::ReadOnly);
+        if(dbfile.isOpen())
+        {
+            LoadSqliteFile();
+            /*
+            dbfile.seek(0);
+            // check if is a sqlite db header, wal header, or journal header
+            uint32_t walheader = qFromBigEndian<uint32_t>(dbfile.read(4));
+            if(walheader == 0x377f0682 || walheader == 0x377f0683) // WAL
+            {
+                qDebug() << "its a wal file, parse here...";
+                StatusUpdate("WAL File: " + opendbdialog.selectedFiles().first() + " successfully opened.");
+            }
+            else
+            {
+                dbfile.seek(0);
+                quint64 journalheader = qFromBigEndian<quint64>(dbfile.read(8));
+                if(journalheader == 0xd9d505f920a163d7) // JOURNAL
+                {
+                    qDebug() << "it's a rollback journal file, parse here...";
+                    StatusUpdate("JOURNAL File: " + opendbdialog.selectedFiles().first() + " successfully opened.");
+                }
+                else
+                {
+                    dbfile.seek(0);
+                    QString sqliteheader = QString::fromStdString(dbfile.read(15).toStdString());
+                    if(sqliteheader == "SQLite format 3") // SQLITE DB
+                    {
+                        qDebug() << "it's a sqlite db file, parse here...";
+                        StatusUpdate("Database File: " + opendbdialog.selectedFiles().first() + " successfully opened.");
+                    }
+                }
+            }
+            */
+            //qDebug() << "dbfile size: " << dbfile.size();
+            dbfile.close();
+        }
+    }
     /*
+    QString exfatstr = QString::fromStdString(curimg->ReadContent(3, 5).toStdString());
     if(prevhivepath.isEmpty())
 	prevhivepath = QDir::homePath();
     QFileDialog openhivedialog(this, tr("Open Registry Hive"), prevhivepath);
@@ -422,15 +473,15 @@ void WombatSqlite::ValueSelected(void)
     */
 }
 
+/*
 int WombatSqlite::GetRootIndex(QTreeWidgetItem* curitem)
 {
-    /*
     if(ui->treewidget->indexOfTopLevelItem(curitem) == -1)
 	GetRootIndex(curitem->parent());
     else
 	return ui->treewidget->indexOfTopLevelItem(curitem);
-    */
 }
+*/
 
 void WombatSqlite::KeySelected(void)
 {
@@ -589,36 +640,54 @@ void WombatSqlite::KeySelected(void)
     libregf_error_free(&regerr);
     */
 }
+
+/*
 void WombatSqlite::closeEvent(QCloseEvent* e)
 {
     e->accept();
 }
+*/
 
-void WombatSqlite::LoadRegistryFile(void)
+void WombatSqlite::LoadSqliteFile(void)
 {
-    /*
-    libregf_file_t* regfile = NULL;
-    libregf_error_t* regerr = NULL;
-    libregf_file_initialize(&regfile, &regerr);
-    libregf_file_open(regfile, hivefilepath.toStdString().c_str(), LIBREGF_OPEN_READ, &regerr);
-    libregf_error_fprint(regerr, stderr);
-    libregf_key_t* rootkey = NULL;
-    libregf_file_get_root_key(regfile, &rootkey, &regerr);
-    libregf_error_fprint(regerr, stderr);
-    int rootsubkeycnt = 0;
-    libregf_key_get_number_of_sub_keys(rootkey, &rootsubkeycnt, &regerr);
-    libregf_error_fprint(regerr, stderr);
-        QTreeWidgetItem* rootitem = new QTreeWidgetItem(ui->treewidget);
-    rootitem->setText(0, hivefilepath.split("/").last().toUpper() + " (" + hivefilepath + ")");
-    //rootitem->setText(0, hivefilepath.split("/").last().toUpper());
+
+    dbfile.seek(0);
+    uint32_t walheader = qFromBigEndian<uint32_t>(dbfile.read(4));
+    if(walheader == 0x377f0682 || walheader == 0x377f0683) // WAL
+    {
+        filetype = 1; // WAL
+        dbfile.seek(8);
+        pagesize = qFromBigEndian<quint32>(dbfile.read(4));
+    }
+    else
+    {
+        dbfile.seek(0);
+        quint64 journalheader = qFromBigEndian<quint64>(dbfile.read(8));
+        if(journalheader == 0xd9d505f920a163d7) // JOURNAL
+        {
+            filetype = 2; // JOURNAL
+            dbfile.seek(24);
+            pagesize = qFromBigEndian<quint32>(dbfile.read(4));
+        }
+        else
+        {
+            dbfile.seek(0);
+            QString sqliteheader = QString::fromStdString(dbfile.read(15).toStdString());
+            if(sqliteheader == "SQLite format 3") // SQLITE DB
+            {
+                filetype = 3; // SQLITE DB
+                dbfile.seek(16);
+                pagesize = qFromBigEndian<quint16>(dbfile.read(2));
+            }
+        }
+    }
+    pagecount = dbfile.size() / pagesize;
+    qDebug() << "pagesize: " << pagesize << "File size: " << dbfile.size() << "page count:" << pagecount;
+    QTreeWidgetItem* rootitem = new QTreeWidgetItem(ui->treewidget);
+    rootitem->setText(0, dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
+    rootitem->setToolTip(0, dbpath);
     ui->treewidget->addTopLevelItem(rootitem);
-    //PopulateChildKeys(rootkey, rootitem, regerr);
-    ui->treewidget->expandItem(rootitem);
-    libregf_key_free(&rootkey, &regerr);
-    libregf_file_close(regfile, &regerr);
-    libregf_file_free(&regfile, &regerr);
-    libregf_error_free(&regerr);
-    */
+    StatusUpdate("SQLite File: " + dbpath + " successfully opened.");
 }
 
 /*
