@@ -65,67 +65,9 @@ void WombatSqlite::OpenDB()
         if(dbfile.isOpen())
         {
             LoadSqliteFile();
-            /*
-            dbfile.seek(0);
-            // check if is a sqlite db header, wal header, or journal header
-            uint32_t walheader = qFromBigEndian<uint32_t>(dbfile.read(4));
-            if(walheader == 0x377f0682 || walheader == 0x377f0683) // WAL
-            {
-                qDebug() << "its a wal file, parse here...";
-                StatusUpdate("WAL File: " + opendbdialog.selectedFiles().first() + " successfully opened.");
-            }
-            else
-            {
-                dbfile.seek(0);
-                quint64 journalheader = qFromBigEndian<quint64>(dbfile.read(8));
-                if(journalheader == 0xd9d505f920a163d7) // JOURNAL
-                {
-                    qDebug() << "it's a rollback journal file, parse here...";
-                    StatusUpdate("JOURNAL File: " + opendbdialog.selectedFiles().first() + " successfully opened.");
-                }
-                else
-                {
-                    dbfile.seek(0);
-                    QString sqliteheader = QString::fromStdString(dbfile.read(15).toStdString());
-                    if(sqliteheader == "SQLite format 3") // SQLITE DB
-                    {
-                        qDebug() << "it's a sqlite db file, parse here...";
-                        StatusUpdate("Database File: " + opendbdialog.selectedFiles().first() + " successfully opened.");
-                    }
-                }
-            }
-            */
-            //qDebug() << "dbfile size: " << dbfile.size();
             dbfile.close();
         }
     }
-    /*
-    QString exfatstr = QString::fromStdString(curimg->ReadContent(3, 5).toStdString());
-    if(prevhivepath.isEmpty())
-	prevhivepath = QDir::homePath();
-    QFileDialog openhivedialog(this, tr("Open Registry Hive"), prevhivepath);
-    openhivedialog.setLabelText(QFileDialog::Accept, "Open");
-    if(openhivedialog.exec())
-    {
-        hivefilepath = openhivedialog.selectedFiles().first();
-	prevhivepath = hivefilepath;
-	hives.append(hivefilepath);
-        hivefile.setFileName(hivefilepath);
-        if(!hivefile.isOpen())
-            hivefile.open(QIODevice::ReadOnly);
-        if(hivefile.isOpen())
-        {
-            hivefile.seek(0);
-            uint32_t hiveheader = qFromBigEndian<uint32_t>(hivefile.read(4));
-            if(hiveheader == 0x72656766) // valid "regf" header
-            {
-                LoadRegistryFile();
-                StatusUpdate("Hive: " + openhivedialog.selectedFiles().first() + " successfully opened.");
-            }
-	    hivefile.close();
-        }
-    }
-    */
 }
 
 void WombatSqlite::ManageTags()
@@ -650,7 +592,7 @@ void WombatSqlite::closeEvent(QCloseEvent* e)
 
 void WombatSqlite::LoadSqliteFile(void)
 {
-
+    filetype = 0;
     dbfile.seek(0);
     uint32_t walheader = qFromBigEndian<uint32_t>(dbfile.read(4));
     if(walheader == 0x377f0682 || walheader == 0x377f0683) // WAL
@@ -681,13 +623,18 @@ void WombatSqlite::LoadSqliteFile(void)
             }
         }
     }
-    pagecount = dbfile.size() / pagesize;
-    qDebug() << "pagesize: " << pagesize << "File size: " << dbfile.size() << "page count:" << pagecount;
-    QTreeWidgetItem* rootitem = new QTreeWidgetItem(ui->treewidget);
-    rootitem->setText(0, dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
-    rootitem->setToolTip(0, dbpath);
-    ui->treewidget->addTopLevelItem(rootitem);
-    StatusUpdate("SQLite File: " + dbpath + " successfully opened.");
+    if(filetype > 0)
+    {
+        pagecount = dbfile.size() / pagesize;
+        qDebug() << "pagesize: " << pagesize << "File size: " << dbfile.size() << "page count:" << pagecount;
+        QTreeWidgetItem* rootitem = new QTreeWidgetItem(ui->treewidget);
+        rootitem->setText(0, dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
+        rootitem->setToolTip(0, dbpath + "," + QString::number(filetype));
+        ui->treewidget->addTopLevelItem(rootitem);
+        StatusUpdate("SQLite File: " + dbpath + " successfully opened.");
+    }
+    else
+        StatusUpdate("Not a SQLite file, file not opened.");
 }
 
 /*
