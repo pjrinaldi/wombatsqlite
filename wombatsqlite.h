@@ -36,10 +36,6 @@ class WombatSqlite : public QMainWindow
 public:
     explicit WombatSqlite(QWidget* parent = 0);
     ~WombatSqlite();
-    //void LoadRegistryFile(void);
-    //void LoadWalFile(void);
-    //void LoadDatabaseFile(void);
-    //void LoadJournalFile(void);
     void LoadSqliteFile(void);
 
 private slots:
