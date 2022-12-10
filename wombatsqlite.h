@@ -65,10 +65,15 @@ private:
     QLabel* statuslabel;
     QString dbpath;
     QString olddbpath;
+    QString curfilepath = "";
     QFile dbfile;
     quint8 filetype = 0;
     quint64 pagecount = 0;
     quint32 pagesize = 0;
+    quint64 curpage = 0;
+    void LoadPage(void);
+    void ParseHeader(void);
+    //void LoadPage(QString filepath, quint8 filepath, curitem->data(257).toUInt(), curitem->data(258).toUInt());
     //void PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* curerr);
     QString DecryptRot13(QString encstr);
     QChar Rot13Char(QChar curchar);

@@ -427,20 +427,28 @@ int WombatSqlite::GetRootIndex(QTreeWidgetItem* curitem)
 }
 */
 
-void WombatSqlite::PageChanged(int curpage)
+void WombatSqlite::PageChanged(int cpage)
 {
-    ui->treewidget->currentItem()->setData(258, curpage);
+    ui->treewidget->currentItem()->setData(258, cpage);
+    curpage = cpage;
+    LoadPage();
     // update page hex here, and rows processing here, etc...
 }
 
 void WombatSqlite::FileSelected(QListWidgetItem* curitem)
 {
-    qDebug() << "curitem text:" << curitem->text();
-    qDebug() << "curitem tag:" << curitem->toolTip();
-    qDebug() << "file type:" << curitem->data(256).toUInt();
-    qDebug() << "page size:" << curitem->data(257).toUInt();
-    qDebug() << "current page:" << curitem->data(258).toUInt();
-    ui->pagespinbox->setValue(curitem->data(258).toUInt());
+    curfilepath = curitem->toolTip();
+    filetype = curitem->data(256).toUInt();
+    pagesize = curitem->data(257).toUInt();
+    curpage = curitem->data(258).toUInt();
+    //qDebug() << "curitem text:" << curitem->text();
+    //qDebug() << "curitem tag:" << curitem->toolTip();
+    //qDebug() << "file type:" << curitem->data(256).toUInt();
+    //qDebug() << "page size:" << curitem->data(257).toUInt();
+    //qDebug() << "current page:" << curitem->data(258).toUInt();
+    ui->pagespinbox->setValue(curpage);
+    LoadPage();
+    //LoadPage(curitem->toolTip(), curitem->data(256).toUInt(), curitem->data(257).toUInt(), curitem->data(258).toUInt());
     /*
     int itemindex = 0;
     QTreeWidgetItem* curitem = ui->treewidget->selectedItems().first();
@@ -595,6 +603,88 @@ void WombatSqlite::FileSelected(QListWidgetItem* curitem)
     libregf_file_free(&regfile, &regerr);
     libregf_error_free(&regerr);
     */
+}
+
+void WombatSqlite::LoadPage()
+{
+    //qDebug() << "file type:" << filetype << "pagesize:" << pagesize << "curpage:" << curpage;
+    QByteArray pagearray;
+    if(curpage == 1)
+        ParseHeader();
+    if(dbfile.isOpen())
+        dbfile.close();
+    dbfile.setFileName(curfilepath);
+    dbfile.open(QIODevice::ReadOnly);
+    if(dbfile.isOpen())
+    {
+        dbfile.seek(curpage - 1 * pagesize);
+        pagearray = dbfile.read(pagesize);
+        dbfile.close();
+    }
+    QString pagecontent = "";
+    int linecount = pagearray.size() / 16;
+    for(int i=0; i < linecount; i++)
+    {
+        pagecontent += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
+        for(int j=0; j < 16; j++)
+        {
+            pagecontent += QString("%1").arg(pagearray[j*i*16], 2, 16, QChar('0')).toUpper() + " ";
+        }
+        for(int j=0; j < 16; j++)
+        {
+            if(!QChar(pagearray.at(j*i*16)).isPrint())
+                pagecontent += ".";
+            else
+                pagecontent += QString("%1").arg(pagearray.at(j*i*16));
+        }
+        pagecontent += "\n";
+    }
+    ui->textedit->setText(pagecontent);
+    pagecontent = "";
+    //qDebug() << "pagearray size:" << pagearray.size() << "pagesize:" << pagesize;
+    /*
+     *  size_t datasize = 0;
+        libregf_value_get_value_data_size(curval, &datasize, &regerr);
+        uint8_t data[datasize];
+        libregf_value_get_value_data(curval, data, datasize, &regerr);
+        QByteArray dataarray = QByteArray::fromRawData((char*)data, datasize);
+        valuedata += "\n\nBinary Content\n--------------\n\n";
+        int linecount = datasize / 16;
+        //int remainder = datasize % 16;
+        for(int i=0; i < linecount; i++)
+        {
+            valuedata += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
+            for(int j=0; j < 16; j++)
+            {
+                valuedata += QString("%1").arg(data[j+i*16], 2, 16, QChar('0')).toUpper() + " ";
+            }
+            for(int j=0; j < 16; j++)
+            {
+                if(!QChar(dataarray.at(j+i*16)).isPrint())
+                {
+                    valuedata += ".";
+                }
+                else
+                    valuedata += QString("%1").arg(dataarray.at(j+i*16));
+            }
+            valuedata += "\n";
+        }
+	ui->plaintext->setPlainText(valuedata);
+
+     */ 
+}
+
+void WombatSqlite::ParseHeader()
+{
+    if(filetype == 1) // WAL
+    {
+    }
+    else if(filetype == 2) // JOURNAL
+    {
+    }
+    else if(filetype == 3) // SQLITE DB
+    {
+    }
 }
 
 /*
