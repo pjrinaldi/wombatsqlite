@@ -16,6 +16,7 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QListWidget>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QSpacerItem>
@@ -26,7 +27,6 @@
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QToolBar>
-#include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -48,7 +48,7 @@ public:
     QLabel *countlabel;
     QSpacerItem *horizontalSpacer;
     QSplitter *splitter_2;
-    QTreeWidget *treewidget;
+    QListWidget *treewidget;
     QSplitter *splitter;
     QTextEdit *textedit;
     QTableWidget *tablewidget;
@@ -113,7 +113,9 @@ public:
 
         pagespinbox = new QSpinBox(centralwidget);
         pagespinbox->setObjectName(QString::fromUtf8("pagespinbox"));
+        pagespinbox->setMinimumSize(QSize(75, 0));
         pagespinbox->setMaximumSize(QSize(16777215, 26));
+        pagespinbox->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
         pagespinbox->setMinimum(1);
 
         horizontalLayout->addWidget(pagespinbox);
@@ -135,16 +137,13 @@ public:
         splitter_2 = new QSplitter(centralwidget);
         splitter_2->setObjectName(QString::fromUtf8("splitter_2"));
         splitter_2->setOrientation(Qt::Horizontal);
-        treewidget = new QTreeWidget(splitter_2);
-        QTreeWidgetItem *__qtreewidgetitem = new QTreeWidgetItem();
-        __qtreewidgetitem->setText(0, QString::fromUtf8("1"));
-        treewidget->setHeaderItem(__qtreewidgetitem);
+        treewidget = new QListWidget(splitter_2);
         treewidget->setObjectName(QString::fromUtf8("treewidget"));
         treewidget->setProperty("showDropIndicator", QVariant(false));
         treewidget->setAlternatingRowColors(true);
         treewidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        treewidget->setUniformItemSizes(true);
         splitter_2->addWidget(treewidget);
-        treewidget->header()->setVisible(true);
         splitter = new QSplitter(splitter_2);
         splitter->setObjectName(QString::fromUtf8("splitter"));
         QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -230,6 +229,8 @@ public:
         actionPublish->setShortcut(QCoreApplication::translate("WombatSqlite", "Ctrl+G", nullptr));
 #endif // QT_CONFIG(shortcut)
         label->setText(QCoreApplication::translate("WombatSqlite", "Page: ", nullptr));
+        pagespinbox->setSuffix(QString());
+        pagespinbox->setPrefix(QString());
         countlabel->setText(QCoreApplication::translate("WombatSqlite", "of ", nullptr));
         textedit->setDocumentTitle(QString());
         toolBar->setWindowTitle(QCoreApplication::translate("WombatSqlite", "toolBar", nullptr));

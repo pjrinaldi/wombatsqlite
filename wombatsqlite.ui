@@ -66,11 +66,26 @@
       </item>
       <item>
        <widget class="QSpinBox" name="pagespinbox">
+        <property name="minimumSize">
+         <size>
+          <width>75</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="maximumSize">
          <size>
           <width>16777215</width>
           <height>26</height>
          </size>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="suffix">
+         <string/>
+        </property>
+        <property name="prefix">
+         <string/>
         </property>
         <property name="minimum">
          <number>1</number>
@@ -116,7 +131,7 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QTreeWidget" name="treewidget">
+      <widget class="QListWidget" name="treewidget">
        <property name="showDropIndicator" stdset="0">
         <bool>false</bool>
        </property>
@@ -126,14 +141,9 @@
        <property name="selectionBehavior">
         <enum>QAbstractItemView::SelectRows</enum>
        </property>
-       <attribute name="headerVisible">
+       <property name="uniformItemSizes">
         <bool>true</bool>
-       </attribute>
-       <column>
-        <property name="text">
-         <string notr="true">1</string>
-        </property>
-       </column>
+       </property>
       </widget>
       <widget class="QSplitter" name="splitter">
        <property name="sizePolicy">

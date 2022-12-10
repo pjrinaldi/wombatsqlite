@@ -11,8 +11,10 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     this->statusBar()->addPermanentWidget(statuslabel, 0);
     StatusUpdate("Open a SQLite DB,WAL, or journal to Begin");
     connect(ui->actionOpenDB, SIGNAL(triggered()), this, SLOT(OpenDB()), Qt::DirectConnection);
-    //ui->tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    //ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Value Name", "Value Type"});
+    ui->tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Is Live", "Type"});
+    connect(ui->treewidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(FileSelected(QListWidgetItem*)), Qt::DirectConnection);
+    connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
     /*
     connect(ui->treewidget, SIGNAL(itemSelectionChanged()), this, SLOT(KeySelected()), Qt::DirectConnection);
     connect(ui->tablewidget, SIGNAL(itemSelectionChanged()), this, SLOT(ValueSelected()), Qt::DirectConnection);
@@ -425,8 +427,20 @@ int WombatSqlite::GetRootIndex(QTreeWidgetItem* curitem)
 }
 */
 
-void WombatSqlite::KeySelected(void)
+void WombatSqlite::PageChanged(int curpage)
 {
+    ui->treewidget->currentItem()->setData(258, curpage);
+    // update page hex here, and rows processing here, etc...
+}
+
+void WombatSqlite::FileSelected(QListWidgetItem* curitem)
+{
+    qDebug() << "curitem text:" << curitem->text();
+    qDebug() << "curitem tag:" << curitem->toolTip();
+    qDebug() << "file type:" << curitem->data(256).toUInt();
+    qDebug() << "page size:" << curitem->data(257).toUInt();
+    qDebug() << "current page:" << curitem->data(258).toUInt();
+    ui->pagespinbox->setValue(curitem->data(258).toUInt());
     /*
     int itemindex = 0;
     QTreeWidgetItem* curitem = ui->treewidget->selectedItems().first();
@@ -625,16 +639,24 @@ void WombatSqlite::LoadSqliteFile(void)
     }
     if(filetype > 0)
     {
+        // to get the file where it needs to go, i need the file type, file path to load, page size, current page, page count
+        // file path is in tooltip, page count is in text, so i need to put filetype, page size and current page in userrole
         pagecount = dbfile.size() / pagesize;
-        qDebug() << "pagesize: " << pagesize << "File size: " << dbfile.size() << "page count:" << pagecount;
-        QTreeWidgetItem* rootitem = new QTreeWidgetItem(ui->treewidget);
-        rootitem->setText(0, dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
-        rootitem->setToolTip(0, dbpath + "," + QString::number(filetype));
-        ui->treewidget->addTopLevelItem(rootitem);
-        //ui->pagespinbox
+        //qDebug() << "pagesize: " << pagesize << "File size: " << dbfile.size() << "page count:" << pagecount;
+        QListWidgetItem* rootitem = new QListWidgetItem(ui->treewidget);
+        rootitem->setText(dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
+        rootitem->setToolTip(dbpath);
+        rootitem->setData(256, QVariant(filetype)); // file type
+        rootitem->setData(257, QVariant(pagesize)); // page size
+        rootitem->setData(258, QVariant(1)); // current page
+        //rootitem->setToolTip(dbpath + "," + QString::number(filetype));
+        ui->treewidget->addItem(rootitem);
+        //ui->treewidget->addTopLevelItem(rootitem);
         ui->pagespinbox->setMaximum(pagecount);
         ui->countlabel->setText("of " + QString::number(pagecount) + " pages");
         StatusUpdate("SQLite File: " + dbpath + " successfully opened.");
+        ui->treewidget->setCurrentRow(ui->treewidget->count() - 1);
+        emit(ui->treewidget->itemClicked(ui->treewidget->item(ui->treewidget->count() -1)));
     }
     else
         StatusUpdate("Not a SQLite file, file not opened.");
