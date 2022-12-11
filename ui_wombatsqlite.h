@@ -23,7 +23,6 @@
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QStatusBar>
-#include <QtWidgets/QTableView>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QToolBar>
@@ -52,7 +51,7 @@ public:
     QSplitter *splitter;
     QTextEdit *textedit;
     QTableWidget *tablewidget;
-    QTableView *propwidget;
+    QTableWidget *propwidget;
     QMenuBar *menubar;
     QStatusBar *statusbar;
     QToolBar *toolBar;
@@ -167,7 +166,7 @@ public:
         tablewidget->setSizePolicy(sizePolicy1);
         splitter->addWidget(tablewidget);
         splitter_2->addWidget(splitter);
-        propwidget = new QTableView(splitter_2);
+        propwidget = new QTableWidget(splitter_2);
         propwidget->setObjectName(QString::fromUtf8("propwidget"));
         splitter_2->addWidget(propwidget);
 

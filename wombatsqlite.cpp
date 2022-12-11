@@ -626,7 +626,7 @@ void WombatSqlite::LoadPage()
         QByteArray pghdrarray = pagearray.left(100);
         ParseHeader(&pghdrarray);
     }
-    QString pagecontent = "";
+    QString pagecontent = "<html><body>";
     int linecount = pagearray.size() / 16;
     int remainder = pagearray.size() % 16;
     qDebug() << "linecount:" << linecount << "remainder:" << remainder;
@@ -635,17 +635,18 @@ void WombatSqlite::LoadPage()
         pagecontent += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
         for(int j=0; j < 16; j++)
         {
-            pagecontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
+            pagecontent += QString("<span id='b" + QString::number(j+i*16) + "'>%1</span>").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
         }
         for(int k=0; k < 16; k++)
         {
             if(!QChar(pagearray.at(k+i*16)).isPrint())
-                pagecontent += ".";
+                pagecontent += "<span id='a" + QString::number(k+i*16) + "'>.</span>";
             else
-                pagecontent += QString("%1").arg(pagearray.at(k+i*16));
+                pagecontent += QString("<span id='a" + QString::number(k+i*16) + "'>%1</span>").arg(pagearray.at(k+i*16));
         }
-        pagecontent += "\n";
+        pagecontent += "<br/>\n";
     }
+    pagecontent += "</body></html>";
     ui->textedit->setText(pagecontent);
     pagecontent = "";
 

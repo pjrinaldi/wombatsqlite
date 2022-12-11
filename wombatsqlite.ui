@@ -183,7 +183,7 @@
         </property>
        </widget>
       </widget>
-      <widget class="QTableView" name="propwidget"/>
+      <widget class="QTableWidget" name="propwidget"/>
      </widget>
     </item>
    </layout>
