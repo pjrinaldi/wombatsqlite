@@ -167,8 +167,18 @@ public:
         splitter->addWidget(tablewidget);
         splitter_2->addWidget(splitter);
         propwidget = new QTableWidget(splitter_2);
+        if (propwidget->columnCount() < 3)
+            propwidget->setColumnCount(3);
         propwidget->setObjectName(QString::fromUtf8("propwidget"));
+        propwidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+        propwidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        propwidget->setDragDropOverwriteMode(false);
+        propwidget->setAlternatingRowColors(true);
+        propwidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        propwidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        propwidget->setColumnCount(3);
         splitter_2->addWidget(propwidget);
+        propwidget->verticalHeader()->setVisible(false);
 
         verticalLayout->addWidget(splitter_2);
 

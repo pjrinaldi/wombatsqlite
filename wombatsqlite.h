@@ -26,7 +26,7 @@
 
 struct WalHeader
 {
-        quint32 walheader; // = qFromBigEndian<quint32>(pageheader->mid(0, 4));
+        quint32 header; // = qFromBigEndian<quint32>(pageheader->mid(0, 4));
         quint32 fileversion; // = qFromBigEndian<quint32>(pageheader->mid(4, 4));
         quint32 checkptseqnum; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
         quint32 salt1; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
@@ -37,24 +37,36 @@ struct WalHeader
 
 struct JournalHeader
 {
-    quint64 jnlheader; //= qFromBigEndian<quint64>(pageheader->mid(0, 8));
-    quint32 jnlpagecnt; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
+    quint64 header; //= qFromBigEndian<quint64>(pageheader->mid(0, 8));
+    quint32 pagecnt; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
     quint32 randomnonce; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
     quint32 initsize; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
     quint32 sectorsize; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
-    quint32 jnlpagesize; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
+    quint32 pagesize; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
 };
 
 struct SqliteHeader
 {
-        char sqlheader[16];
+        char header[16];
         //QString sqliteheader; // = QString::fromStdString(pageheader->mid(0, 16).toStdString());
-        quint16 dbpagesize; // = qFromBigEndian<quint16>(pageheader->mid(16, 2));
+        quint16 pagesize; // = qFromBigEndian<quint16>(pageheader->mid(16, 2));
         quint8 writever; // = qFromBigEndian<quint8>(pageheader->mid(18, 1));
         quint8 readver; // = qFromBigEndian<quint8>(pageheader->mid(19, 1));
         quint8 unusedpagespace; // = qFromBigEndian<quint8>(pageheader->mid(20, 1));
-        quint32 dbpagecount; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+        quint32 pagecount; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
         quint32 firstfreepagenum; // = qFromBigEndian<quint32>(pageheader->mid(32, 4));
+        quint32 freepagescount; // 36, 4
+        quint32 schemacookie; // 40, 4
+        quint32 schemaformat; // 44, 4 - 1,2,3,4
+        quint32 pagecachesize; // 48, 4
+        quint32 largestrootbtreepagenumber; // 52, 4 - or zero
+        quint32 textencoding; // 56, 4 - 1 utf-8, 2 utf-16le, 3 utf-16be
+        quint32 userversion; // 60, 4
+        quint32 incrementalvacuummodebool; // 64, 4 - 0 = false, otherwise true
+        quint32 appid; // 68, 4
+        char reserved[20]; // 72, 20
+        quint32 versionvalidfornum; // 92, 4
+        quint32 sqliteversion; // 96, 4
 };
 
 namespace Ui
@@ -106,6 +118,7 @@ private:
     quint64 curpage = 0;
     void LoadPage(void);
     void ParseHeader(QByteArray* pageheader);
+    void PopulateHeader(void);
     //void LoadPage(QString filepath, quint8 filepath, curitem->data(257).toUInt(), curitem->data(258).toUInt());
     //void PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* curerr);
     QString DecryptRot13(QString encstr);
