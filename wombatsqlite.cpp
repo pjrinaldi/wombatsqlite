@@ -15,6 +15,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Is Live", "Type"});
     connect(ui->treewidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(FileSelected(QListWidgetItem*)), Qt::DirectConnection);
     connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
+    connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
     /*
     connect(ui->treewidget, SIGNAL(itemSelectionChanged()), this, SLOT(KeySelected()), Qt::DirectConnection);
     connect(ui->tablewidget, SIGNAL(itemSelectionChanged()), this, SLOT(ValueSelected()), Qt::DirectConnection);
@@ -627,7 +628,8 @@ void WombatSqlite::LoadPage()
         ParseHeader(&pghdrarray);
         PopulateHeader();
     }
-    QString pagecontent = "<html><body>";
+    QString pagecontent = "";
+    //QString pagecontent = "<html><body>";
     int linecount = pagearray.size() / 16;
     int remainder = pagearray.size() % 16;
     qDebug() << "linecount:" << linecount << "remainder:" << remainder;
@@ -636,18 +638,20 @@ void WombatSqlite::LoadPage()
         pagecontent += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
         for(int j=0; j < 16; j++)
         {
-            pagecontent += QString("<span id='b" + QString::number(j+i*16) + "'>%1</span>").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
+            pagecontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
         }
         for(int k=0; k < 16; k++)
         {
             if(!QChar(pagearray.at(k+i*16)).isPrint())
-                pagecontent += "<span id='a" + QString::number(k+i*16) + "'>.</span>";
+                pagecontent += ".";
             else
-                pagecontent += QString("<span id='a" + QString::number(k+i*16) + "'>%1</span>").arg(pagearray.at(k+i*16));
+                pagecontent += QString("%1").arg(pagearray.at(k+i*16));
         }
         pagecontent += "<br/>\n";
     }
-    pagecontent += "</body></html>";
+    //pagecontent += "</body></html>";
+    //ui->textedit->setPlainText(pagecontent);
+    ui->textedit->setHtml(pagecontent);
     ui->textedit->setText(pagecontent);
     pagecontent = "";
 
@@ -830,6 +834,24 @@ void WombatSqlite::LoadSqliteFile(void)
     else
         StatusUpdate("Not a SQLite file, file not opened.");
 }
+
+void WombatSqlite::SelectText()
+{
+    QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
+    uint startpos = 9 + vallist.at(0).toUInt();
+    uint endpos = startpos + vallist.at(1).toUInt() * 2 + vallist.at(1).toUInt() - 1;
+    QTextCursor c = ui->textedit->textCursor();
+    c.setPosition(startpos);
+    c.setPosition(endpos, QTextCursor::KeepAnchor);
+    ui->textedit->setTextCursor(c);
+}
+
+/*
+ *QTextCursor c = textEdit->textCursor();
+ c.setPosition(startPos);
+ c.setPosition(endPos, QTextCursor::KeepAnchor);
+ textEdit->setTextCursor(c);
+ */ 
 
 /*
 void WombatSqlite::PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* regerr)

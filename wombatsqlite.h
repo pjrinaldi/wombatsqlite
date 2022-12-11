@@ -91,6 +91,8 @@ private slots:
     void ShowAbout(void);
     void FileSelected(QListWidgetItem* curitem);
     void PageChanged(int curpage);
+    void SelectText(void);
+
     void ValueSelected(void);
     void TagMenu(const QPoint &point);
     void SetTag(void);
