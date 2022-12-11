@@ -432,7 +432,7 @@ void WombatSqlite::PageChanged(int cpage)
     ui->treewidget->currentItem()->setData(258, cpage);
     curpage = cpage;
     LoadPage();
-    // update page hex here, and rows processing here, etc...
+    //LoadRecords();
 }
 
 void WombatSqlite::FileSelected(QListWidgetItem* curitem)
@@ -448,7 +448,9 @@ void WombatSqlite::FileSelected(QListWidgetItem* curitem)
     //qDebug() << "current page:" << curitem->data(258).toUInt();
     ui->pagespinbox->setValue(curpage);
     LoadPage();
-    //LoadPage(curitem->toolTip(), curitem->data(256).toUInt(), curitem->data(257).toUInt(), curitem->data(258).toUInt());
+    // need to implement this to parse the records within the page...
+    //LoadRecords();
+
     /*
     int itemindex = 0;
     QTreeWidgetItem* curitem = ui->treewidget->selectedItems().first();
@@ -609,8 +611,6 @@ void WombatSqlite::LoadPage()
 {
     //qDebug() << "file type:" << filetype << "pagesize:" << pagesize << "curpage:" << curpage;
     QByteArray pagearray;
-    if(curpage == 1)
-        ParseHeader();
     if(dbfile.isOpen())
         dbfile.close();
     dbfile.setFileName(curfilepath);
@@ -621,6 +621,11 @@ void WombatSqlite::LoadPage()
         pagearray = dbfile.read(pagesize);
         dbfile.close();
     }
+    if(curpage == 1)
+    {
+        QByteArray pghdrarray = pagearray.left(100);
+        ParseHeader(&pghdrarray);
+    }
     QString pagecontent = "";
     int linecount = pagearray.size() / 16;
     int remainder = pagearray.size() % 16;
@@ -630,7 +635,7 @@ void WombatSqlite::LoadPage()
         pagecontent += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
         for(int j=0; j < 16; j++)
         {
-            pagecontent += QString("%1").arg(pagearray[j+i*16], 2, 16, QChar('0')).toUpper() + " ";
+            pagecontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
         }
         for(int k=0; k < 16; k++)
         {
@@ -677,16 +682,25 @@ void WombatSqlite::LoadPage()
      */ 
 }
 
-void WombatSqlite::ParseHeader()
+void WombatSqlite::ParseHeader(QByteArray* pageheader)
 {
     if(filetype == 1) // WAL
     {
+        WalHeader* walhdrptr = NULL;
+        walhdrptr = reinterpret_cast<WalHeader*>(pageheader->mid(0, 32).data());
+        qDebug() << "walheader:" << walhdrptr->walheader;
     }
     else if(filetype == 2) // JOURNAL
     {
+        JournalHeader* jnlhdrptr = NULL;
+        jnlhdrptr = reinterpret_cast<JournalHeader*>(pageheader->mid(0, 28).data());
+        qDebug() << "jnlpagesize:" << jnlhdrptr->jnlpagesize;
     }
     else if(filetype == 3) // SQLITE DB
     {
+        SqliteHeader* sqlhdrptr = NULL;
+        sqlhdrptr = reinterpret_cast<SqliteHeader*>(pageheader->mid(0, 100).data());
+        printf("sqlite header: %s\n", sqlhdrptr->sqlheader);
     }
 }
 

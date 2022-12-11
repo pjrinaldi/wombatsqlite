@@ -24,6 +24,39 @@
 #define EPOCH_DIFFERENCE 11644473600LL
 #define NSEC_BTWN_1904_1970	(uint32_t) 2082844800U
 
+struct WalHeader
+{
+        quint32 walheader; // = qFromBigEndian<quint32>(pageheader->mid(0, 4));
+        quint32 fileversion; // = qFromBigEndian<quint32>(pageheader->mid(4, 4));
+        quint32 checkptseqnum; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
+        quint32 salt1; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
+        quint32 salt2; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
+        quint32 checksum1; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
+        quint32 checksum2; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+};
+
+struct JournalHeader
+{
+    quint64 jnlheader; //= qFromBigEndian<quint64>(pageheader->mid(0, 8));
+    quint32 jnlpagecnt; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
+    quint32 randomnonce; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
+    quint32 initsize; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
+    quint32 sectorsize; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
+    quint32 jnlpagesize; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
+};
+
+struct SqliteHeader
+{
+        char sqlheader[16];
+        //QString sqliteheader; // = QString::fromStdString(pageheader->mid(0, 16).toStdString());
+        quint16 dbpagesize; // = qFromBigEndian<quint16>(pageheader->mid(16, 2));
+        quint8 writever; // = qFromBigEndian<quint8>(pageheader->mid(18, 1));
+        quint8 readver; // = qFromBigEndian<quint8>(pageheader->mid(19, 1));
+        quint8 unusedpagespace; // = qFromBigEndian<quint8>(pageheader->mid(20, 1));
+        quint32 dbpagecount; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+        quint32 firstfreepagenum; // = qFromBigEndian<quint32>(pageheader->mid(32, 4));
+};
+
 namespace Ui
 {
     class WombatSqlite;
@@ -72,7 +105,7 @@ private:
     quint32 pagesize = 0;
     quint64 curpage = 0;
     void LoadPage(void);
-    void ParseHeader(void);
+    void ParseHeader(QByteArray* pageheader);
     //void LoadPage(QString filepath, quint8 filepath, curitem->data(257).toUInt(), curitem->data(258).toUInt());
     //void PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* curerr);
     QString DecryptRot13(QString encstr);
@@ -93,6 +126,9 @@ private:
     QStringList taggeditems;
     QStringList hives;
     QStringList dbfiles;
+    JournalHeader journalheader;
+    WalHeader walheader;
+    SqliteHeader sqliteheader;
 };
 
 #endif // WOMBATSQLITE_H
