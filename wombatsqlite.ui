@@ -162,6 +162,11 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="font">
+         <font>
+          <family>Noto Sans Mono</family>
+         </font>
+        </property>
         <property name="documentTitle">
          <string/>
         </property>

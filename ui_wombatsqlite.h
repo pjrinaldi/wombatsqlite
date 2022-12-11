@@ -156,6 +156,9 @@ public:
         textedit->setObjectName(QString::fromUtf8("textedit"));
         sizePolicy1.setHeightForWidth(textedit->sizePolicy().hasHeightForWidth());
         textedit->setSizePolicy(sizePolicy1);
+        QFont font;
+        font.setFamily(QString::fromUtf8("Noto Sans Mono"));
+        textedit->setFont(font);
         textedit->setReadOnly(true);
         splitter->addWidget(textedit);
         tablewidget = new QTableWidget(splitter);

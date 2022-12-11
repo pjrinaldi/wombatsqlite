@@ -623,24 +623,27 @@ void WombatSqlite::LoadPage()
     }
     QString pagecontent = "";
     int linecount = pagearray.size() / 16;
+    int remainder = pagearray.size() % 16;
+    qDebug() << "linecount:" << linecount << "remainder:" << remainder;
     for(int i=0; i < linecount; i++)
     {
         pagecontent += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
         for(int j=0; j < 16; j++)
         {
-            pagecontent += QString("%1").arg(pagearray[j*i*16], 2, 16, QChar('0')).toUpper() + " ";
+            pagecontent += QString("%1").arg(pagearray[j+i*16], 2, 16, QChar('0')).toUpper() + " ";
         }
-        for(int j=0; j < 16; j++)
+        for(int k=0; k < 16; k++)
         {
-            if(!QChar(pagearray.at(j*i*16)).isPrint())
+            if(!QChar(pagearray.at(k+i*16)).isPrint())
                 pagecontent += ".";
             else
-                pagecontent += QString("%1").arg(pagearray.at(j*i*16));
+                pagecontent += QString("%1").arg(pagearray.at(k+i*16));
         }
         pagecontent += "\n";
     }
     ui->textedit->setText(pagecontent);
     pagecontent = "";
+
     //qDebug() << "pagearray size:" << pagearray.size() << "pagesize:" << pagesize;
     /*
      *  size_t datasize = 0;
