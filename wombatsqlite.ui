@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Wombat Registry</string>
+   <string>Wombat SQLite Forensics</string>
   </property>
   <property name="windowIcon">
    <iconset resource="wombatsqlite.qrc">
@@ -181,6 +181,57 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+       </widget>
+       <widget class="QWidget" name="horizontalLayoutWidget">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QPlainTextEdit" name="offsetedit">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>75</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: #eee;</string>
+           </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="undoRedoEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTextEdit" name="hexedit"/>
+         </item>
+         <item>
+          <widget class="QTextEdit" name="asciiedit"/>
+         </item>
+         <item>
+          <widget class="QScrollBar" name="editscrollbar">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
       <widget class="QTableWidget" name="propwidget">

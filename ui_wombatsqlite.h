@@ -19,6 +19,8 @@
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QPlainTextEdit>
+#include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QSplitter>
@@ -51,6 +53,12 @@ public:
     QSplitter *splitter;
     QTextEdit *textedit;
     QTableWidget *tablewidget;
+    QWidget *horizontalLayoutWidget;
+    QHBoxLayout *horizontalLayout_2;
+    QPlainTextEdit *offsetedit;
+    QTextEdit *hexedit;
+    QTextEdit *asciiedit;
+    QScrollBar *editscrollbar;
     QTableWidget *propwidget;
     QMenuBar *menubar;
     QStatusBar *statusbar;
@@ -165,6 +173,45 @@ public:
         sizePolicy1.setHeightForWidth(tablewidget->sizePolicy().hasHeightForWidth());
         tablewidget->setSizePolicy(sizePolicy1);
         splitter->addWidget(tablewidget);
+        horizontalLayoutWidget = new QWidget(splitter);
+        horizontalLayoutWidget->setObjectName(QString::fromUtf8("horizontalLayoutWidget"));
+        horizontalLayout_2 = new QHBoxLayout(horizontalLayoutWidget);
+        horizontalLayout_2->setSpacing(0);
+        horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
+        horizontalLayout_2->setContentsMargins(0, 0, 0, 0);
+        offsetedit = new QPlainTextEdit(horizontalLayoutWidget);
+        offsetedit->setObjectName(QString::fromUtf8("offsetedit"));
+        QSizePolicy sizePolicy2(QSizePolicy::Fixed, QSizePolicy::Expanding);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(offsetedit->sizePolicy().hasHeightForWidth());
+        offsetedit->setSizePolicy(sizePolicy2);
+        offsetedit->setMaximumSize(QSize(75, 16777215));
+        offsetedit->setStyleSheet(QString::fromUtf8("background-color: #eee;"));
+        offsetedit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        offsetedit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        offsetedit->setUndoRedoEnabled(false);
+        offsetedit->setReadOnly(true);
+
+        horizontalLayout_2->addWidget(offsetedit);
+
+        hexedit = new QTextEdit(horizontalLayoutWidget);
+        hexedit->setObjectName(QString::fromUtf8("hexedit"));
+
+        horizontalLayout_2->addWidget(hexedit);
+
+        asciiedit = new QTextEdit(horizontalLayoutWidget);
+        asciiedit->setObjectName(QString::fromUtf8("asciiedit"));
+
+        horizontalLayout_2->addWidget(asciiedit);
+
+        editscrollbar = new QScrollBar(horizontalLayoutWidget);
+        editscrollbar->setObjectName(QString::fromUtf8("editscrollbar"));
+        editscrollbar->setOrientation(Qt::Vertical);
+
+        horizontalLayout_2->addWidget(editscrollbar);
+
+        splitter->addWidget(horizontalLayoutWidget);
         splitter_2->addWidget(splitter);
         propwidget = new QTableWidget(splitter_2);
         if (propwidget->columnCount() < 3)
@@ -207,7 +254,7 @@ public:
 
     void retranslateUi(QMainWindow *WombatSqlite)
     {
-        WombatSqlite->setWindowTitle(QCoreApplication::translate("WombatSqlite", "Wombat Registry", nullptr));
+        WombatSqlite->setWindowTitle(QCoreApplication::translate("WombatSqlite", "Wombat SQLite Forensics", nullptr));
         actionOpenDB->setText(QCoreApplication::translate("WombatSqlite", "Open Hive", nullptr));
 #if QT_CONFIG(shortcut)
         actionOpenDB->setShortcut(QCoreApplication::translate("WombatSqlite", "Ctrl+O", nullptr));
