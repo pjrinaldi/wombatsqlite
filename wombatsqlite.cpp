@@ -430,10 +430,13 @@ int WombatSqlite::GetRootIndex(QTreeWidgetItem* curitem)
 
 void WombatSqlite::PageChanged(int cpage)
 {
-    ui->treewidget->currentItem()->setData(258, cpage);
-    curpage = cpage;
-    LoadPage();
-    //LoadRecords();
+    if(ui->treewidget->currentItem() != NULL)
+    {
+        ui->treewidget->currentItem()->setData(258, cpage);
+        curpage = cpage;
+        LoadPage();
+        //LoadRecords();
+    }
 }
 
 void WombatSqlite::FileSelected(QListWidgetItem* curitem)
@@ -694,12 +697,13 @@ void WombatSqlite::ParseHeader(QByteArray* pageheader)
     {
         walheader.header = qFromBigEndian<quint32>(pageheader->mid(0, 4));
         walheader.fileversion = qFromBigEndian<quint32>(pageheader->mid(4, 4));
+        walheader.pagesize = qFromBigEndian<quint32>(pageheader->mid(8, 4));
         walheader.checkptseqnum = qFromBigEndian<quint32>(pageheader->mid(12, 4));
         walheader.salt1 = qFromBigEndian<quint32>(pageheader->mid(16, 4));
         walheader.salt2 = qFromBigEndian<quint32>(pageheader->mid(20, 4));
         walheader.checksum1 = qFromBigEndian<quint32>(pageheader->mid(24, 4));
         walheader.checksum2 = qFromBigEndian<quint32>(pageheader->mid(28, 4));
-        qDebug() << "walheader:" << QString::number(walheader.header, 16);
+        //qDebug() << "walheader:" << QString::number(walheader.header, 16);
     }
     else if(filetype == 2) // JOURNAL
     {
@@ -720,7 +724,7 @@ void WombatSqlite::PopulateHeader()
 {
     if(filetype == 1) // WAL
     {
-        ui->propwidget->setRowCount(7);
+        ui->propwidget->setRowCount(8);
         ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
         ui->propwidget->setItem(0, 0, new QTableWidgetItem("0, 4"));
         ui->propwidget->setItem(0, 1, new QTableWidgetItem(QString("0x" + QString("%1").arg(walheader.header, 8, 16, QChar('0')).toUpper())));
@@ -728,6 +732,24 @@ void WombatSqlite::PopulateHeader()
         ui->propwidget->setItem(1, 0, new QTableWidgetItem("4, 4"));
         ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(walheader.fileversion)));
         ui->propwidget->setItem(1, 2, new QTableWidgetItem("WAL File Version"));
+        ui->propwidget->setItem(2, 0, new QTableWidgetItem("8, 4"));
+        ui->propwidget->setItem(2, 1, new QTableWidgetItem(QString::number(walheader.pagesize)));
+        ui->propwidget->setItem(2, 2, new QTableWidgetItem("WAL Page Size"));
+        ui->propwidget->setItem(3, 0, new QTableWidgetItem("12, 4"));
+        ui->propwidget->setItem(3, 1, new QTableWidgetItem(QString::number(walheader.checkptseqnum)));
+        ui->propwidget->setItem(3, 2, new QTableWidgetItem("WAL Checkpoint Sequence Number"));
+        ui->propwidget->setItem(4, 0, new QTableWidgetItem("16, 4"));
+        ui->propwidget->setItem(4, 1, new QTableWidgetItem(QString::number(walheader.salt1)));
+        ui->propwidget->setItem(4, 2, new QTableWidgetItem("WAL Salt 1"));
+        ui->propwidget->setItem(5, 0, new QTableWidgetItem("20, 4"));
+        ui->propwidget->setItem(5, 1, new QTableWidgetItem(QString::number(walheader.salt2)));
+        ui->propwidget->setItem(5, 2, new QTableWidgetItem("WAL Salt 2"));
+        ui->propwidget->setItem(6, 0, new QTableWidgetItem("24, 4"));
+        ui->propwidget->setItem(6, 1, new QTableWidgetItem(QString::number(walheader.checksum1)));
+        ui->propwidget->setItem(6, 2, new QTableWidgetItem("WAL Checksum 1"));
+        ui->propwidget->setItem(7, 0, new QTableWidgetItem("28, 4"));
+        ui->propwidget->setItem(7, 1, new QTableWidgetItem(QString::number(walheader.checksum2)));
+        ui->propwidget->setItem(7, 2, new QTableWidgetItem("WAL Checksum 2"));
     }
     else if(filetype == 2) // JOURNAL
     {
@@ -840,8 +862,20 @@ void WombatSqlite::LoadSqliteFile(void)
 
 void WombatSqlite::SelectText()
 {
+    uint startpos = 9;
+    uint linenumber = 1;
     QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
-    uint startpos = 9 + vallist.at(0).toUInt() * 3;
+    qDebug() << "vallist:" << vallist.at(0).toUInt();
+    if(vallist.at(0).toUInt() > 15)
+    {
+        linenumber = vallist.at(0).toUInt() / 15;
+        //if(vallist.at(0).toUInt() % 15 > 0)
+        //    linenumber++;
+        startpos = (9 + 32 + 16) * linenumber + vallist.at(0).toUInt() * 3 - 16 - 6;
+    }
+    else
+        startpos += vallist.at(0).toUInt() * 3;
+    qDebug() << "linenumber:" << linenumber;
     uint endpos = startpos + vallist.at(1).toUInt() * 2 + vallist.at(1).toUInt() - 1;
     QTextCursor c = ui->textedit->textCursor();
     c.setPosition(startpos);

@@ -28,6 +28,7 @@ struct WalHeader
 {
         quint32 header; // = qFromBigEndian<quint32>(pageheader->mid(0, 4));
         quint32 fileversion; // = qFromBigEndian<quint32>(pageheader->mid(4, 4));
+        quint32 pagesize; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
         quint32 checkptseqnum; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
         quint32 salt1; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
         quint32 salt2; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
