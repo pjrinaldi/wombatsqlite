@@ -16,6 +16,8 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     connect(ui->treewidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(FileSelected(QListWidgetItem*)), Qt::DirectConnection);
     connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
     connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
+    connect(ui->editscrollbar, SIGNAL(valueChanged(int)), this, SLOT(ScrollHex(int)), Qt::DirectConnection);
+    //connect(ui->offsetedit, ui->hexedit, ui->utf8edit, ui->editscrollbar
     /*
     connect(ui->treewidget, SIGNAL(itemSelectionChanged()), this, SLOT(KeySelected()), Qt::DirectConnection);
     connect(ui->tablewidget, SIGNAL(itemSelectionChanged()), this, SLOT(ValueSelected()), Qt::DirectConnection);
@@ -439,6 +441,13 @@ void WombatSqlite::PageChanged(int cpage)
     }
 }
 
+void WombatSqlite::ScrollHex(int linecount)
+{
+    ui->offsetedit->verticalScrollBar()->setValue(linecount);
+    ui->hexedit->verticalScrollBar()->setValue(linecount);
+    ui->utf8edit->verticalScrollBar()->setValue(linecount);
+}
+
 void WombatSqlite::FileSelected(QListWidgetItem* curitem)
 {
     curfilepath = curitem->toolTip();
@@ -631,32 +640,59 @@ void WombatSqlite::LoadPage()
         ParseHeader(&pghdrarray);
         PopulateHeader();
     }
+    QString offsetcontent = "";
+    QString hexcontent = "";
+    QString utf8content = "";
     QString pagecontent = "";
     //QString pagecontent = "<html><body>";
     int linecount = pagearray.size() / 16;
     int remainder = pagearray.size() % 16;
     qDebug() << "linecount:" << linecount << "remainder:" << remainder;
+
+    ui->editscrollbar->setMaximum(linecount - 1);
+    ui->editscrollbar->setMinimum(0);
+    ui->editscrollbar->setSingleStep(1);
+
     for(int i=0; i < linecount; i++)
     {
+        offsetcontent += QString::number(i*16, 16).rightJustified(5, '0') + "\n";
         pagecontent += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
         for(int j=0; j < 16; j++)
         {
+            hexcontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
             pagecontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
         }
         for(int k=0; k < 16; k++)
         {
             if(!QChar(pagearray.at(k+i*16)).isPrint())
+            {
                 pagecontent += ".";
+                utf8content += ".";
+            }
             else
+            {
                 pagecontent += QString("%1").arg(pagearray.at(k+i*16));
+                utf8content += QString("%1").arg(pagearray.at(k+i*16));
+            }
         }
-        pagecontent += "<br/>\n";
+        hexcontent += "\n";
+        utf8content += "\n";
+        pagecontent += "\n";
+        //pagecontent += "<br/>\n";
     }
     //pagecontent += "</body></html>";
     //ui->textedit->setPlainText(pagecontent);
-    ui->textedit->setHtml(pagecontent);
-    ui->textedit->setText(pagecontent);
+    //ui->textedit->setHtml(pagecontent);
+
+    ui->offsetedit->setPlainText(offsetcontent);
+    ui->hexedit->setPlainText(hexcontent);
+    ui->utf8edit->setPlainText(utf8content);
+
+    ui->textedit->setPlainText(pagecontent);
     pagecontent = "";
+    offsetcontent = "";
+    hexcontent = "";
+    utf8content = "";
 
     //qDebug() << "pagearray size:" << pagearray.size() << "pagesize:" << pagesize;
     /*
@@ -862,6 +898,8 @@ void WombatSqlite::LoadSqliteFile(void)
 
 void WombatSqlite::SelectText()
 {
+    uint hexlength = 16 * 3; // 48
+    uint utf8length = 16;
     uint startpos = 9;
     uint linenumber = 1;
     QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
@@ -881,6 +919,16 @@ void WombatSqlite::SelectText()
     c.setPosition(startpos);
     c.setPosition(endpos, QTextCursor::KeepAnchor);
     ui->textedit->setTextCursor(c);
+
+    QTextCursor hexcursor = ui->hexedit->textCursor();
+    hexcursor.setPosition(vallist.at(0).toUInt() * 3);
+    hexcursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt() * 3 - 1, QTextCursor::KeepAnchor);
+    ui->hexedit->setTextCursor(hexcursor);
+
+    QTextCursor utf8cursor = ui->utf8edit->textCursor();
+    utf8cursor.setPosition(vallist.at(0).toUInt());
+    utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+    ui->utf8edit->setTextCursor(utf8cursor);
 }
 
 /*

@@ -93,6 +93,7 @@ private slots:
     void FileSelected(QListWidgetItem* curitem);
     void PageChanged(int curpage);
     void SelectText(void);
+    void ScrollHex(int linecount);
 
     void ValueSelected(void);
     void TagMenu(const QPoint &point);

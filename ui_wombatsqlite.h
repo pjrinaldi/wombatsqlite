@@ -56,8 +56,8 @@ public:
     QWidget *horizontalLayoutWidget;
     QHBoxLayout *horizontalLayout_2;
     QPlainTextEdit *offsetedit;
-    QTextEdit *hexedit;
-    QTextEdit *asciiedit;
+    QPlainTextEdit *hexedit;
+    QPlainTextEdit *utf8edit;
     QScrollBar *editscrollbar;
     QTableWidget *propwidget;
     QMenuBar *menubar;
@@ -186,7 +186,8 @@ public:
         sizePolicy2.setVerticalStretch(0);
         sizePolicy2.setHeightForWidth(offsetedit->sizePolicy().hasHeightForWidth());
         offsetedit->setSizePolicy(sizePolicy2);
-        offsetedit->setMaximumSize(QSize(75, 16777215));
+        offsetedit->setMaximumSize(QSize(50, 16777215));
+        offsetedit->setFont(font);
         offsetedit->setStyleSheet(QString::fromUtf8("background-color: #eee;"));
         offsetedit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         offsetedit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -195,15 +196,28 @@ public:
 
         horizontalLayout_2->addWidget(offsetedit);
 
-        hexedit = new QTextEdit(horizontalLayoutWidget);
+        hexedit = new QPlainTextEdit(horizontalLayoutWidget);
         hexedit->setObjectName(QString::fromUtf8("hexedit"));
+        sizePolicy2.setHeightForWidth(hexedit->sizePolicy().hasHeightForWidth());
+        hexedit->setSizePolicy(sizePolicy2);
+        hexedit->setMaximumSize(QSize(800, 16777215));
+        hexedit->setBaseSize(QSize(0, 0));
+        hexedit->setFont(font);
+        hexedit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        hexedit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
         horizontalLayout_2->addWidget(hexedit);
 
-        asciiedit = new QTextEdit(horizontalLayoutWidget);
-        asciiedit->setObjectName(QString::fromUtf8("asciiedit"));
+        utf8edit = new QPlainTextEdit(horizontalLayoutWidget);
+        utf8edit->setObjectName(QString::fromUtf8("utf8edit"));
+        sizePolicy2.setHeightForWidth(utf8edit->sizePolicy().hasHeightForWidth());
+        utf8edit->setSizePolicy(sizePolicy2);
+        utf8edit->setMaximumSize(QSize(800, 16777215));
+        utf8edit->setFont(font);
+        utf8edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        utf8edit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-        horizontalLayout_2->addWidget(asciiedit);
+        horizontalLayout_2->addWidget(utf8edit);
 
         editscrollbar = new QScrollBar(horizontalLayoutWidget);
         editscrollbar->setObjectName(QString::fromUtf8("editscrollbar"));
@@ -292,6 +306,7 @@ public:
         pagespinbox->setPrefix(QString());
         countlabel->setText(QCoreApplication::translate("WombatSqlite", "of ", nullptr));
         textedit->setDocumentTitle(QString());
+        offsetedit->setPlaceholderText(QCoreApplication::translate("WombatSqlite", "0000", nullptr));
         toolBar->setWindowTitle(QCoreApplication::translate("WombatSqlite", "toolBar", nullptr));
     } // retranslateUi
 
