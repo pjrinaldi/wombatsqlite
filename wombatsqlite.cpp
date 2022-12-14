@@ -723,8 +723,11 @@ void WombatSqlite::PopulateHeader()
         ui->propwidget->setRowCount(7);
         ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
         ui->propwidget->setItem(0, 0, new QTableWidgetItem("0, 4"));
-        ui->propwidget->setItem(0, 1, new QTableWidgetItem(QString("0x%1").arg(walheader.header, 8, 16, QChar('0')).toUpper()));
+        ui->propwidget->setItem(0, 1, new QTableWidgetItem(QString("0x" + QString("%1").arg(walheader.header, 8, 16, QChar('0')).toUpper())));
         ui->propwidget->setItem(0, 2, new QTableWidgetItem("WAL HEADER, last byte is either 0x82 or 0x83 which means something i forget right now"));
+        ui->propwidget->setItem(1, 0, new QTableWidgetItem("4, 4"));
+        ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(walheader.fileversion)));
+        ui->propwidget->setItem(1, 2, new QTableWidgetItem("WAL File Version"));
     }
     else if(filetype == 2) // JOURNAL
     {
@@ -838,7 +841,7 @@ void WombatSqlite::LoadSqliteFile(void)
 void WombatSqlite::SelectText()
 {
     QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
-    uint startpos = 9 + vallist.at(0).toUInt();
+    uint startpos = 9 + vallist.at(0).toUInt() * 3;
     uint endpos = startpos + vallist.at(1).toUInt() * 2 + vallist.at(1).toUInt() - 1;
     QTextCursor c = ui->textedit->textCursor();
     c.setPosition(startpos);
