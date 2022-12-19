@@ -645,7 +645,7 @@ void WombatSqlite::LoadPage()
     QString offsetcontent = "";
     QString hexcontent = "";
     QString utf8content = "";
-    QString pagecontent = "";
+    //QString pagecontent = "";
     //QString pagecontent = "<html><body>";
     int linecount = pagearray.size() / 16;
     //int remainder = pagearray.size() % 16;
@@ -668,6 +668,12 @@ void WombatSqlite::LoadPage()
                 hexcontent += " ";
                 //pagecontent += " ";
             }
+            QChar curchar = QChar(pagearray.at(j+i*16));
+            if(!curchar.isPrint())
+                utf8content += ".";
+            else
+                utf8content += curchar;
+            /*
             if(!QChar(pagearray.at(j+i*16)).isPrint())
             {
                 //pagecontent += ".";
@@ -679,6 +685,7 @@ void WombatSqlite::LoadPage()
                 utf8content += QChar(pagearray.at(j+i*16));
                 //utf8content += QString("%1").arg(pagearray.at(j+i*16));
             }
+            */
         }
         /*
         for(int k=0; k < 16; k++)
@@ -949,8 +956,17 @@ void WombatSqlite::SelectText()
     ui->hexedit->setTextCursor(hexcursor);
 
     QTextCursor utf8cursor = ui->utf8edit->textCursor();
+    qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
+    if(vallist.at(0).toUInt() > 15)
+    {
+    utf8cursor.setPosition(vallist.at(0).toUInt() + 1);
+    utf8cursor.setPosition(vallist.at(0).toUInt() + 1 + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+    }
+    else
+    {
     utf8cursor.setPosition(vallist.at(0).toUInt());
     utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+    }
     ui->utf8edit->setTextCursor(utf8cursor);
 
     OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
