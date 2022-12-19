@@ -26,7 +26,6 @@
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTableWidget>
-#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
@@ -51,14 +50,13 @@ public:
     QSplitter *splitter_2;
     QListWidget *treewidget;
     QSplitter *splitter;
-    QTextEdit *textedit;
-    QTableWidget *tablewidget;
     QWidget *horizontalLayoutWidget;
     QHBoxLayout *horizontalLayout_2;
     QPlainTextEdit *offsetedit;
     QPlainTextEdit *hexedit;
     QPlainTextEdit *utf8edit;
     QScrollBar *editscrollbar;
+    QTableWidget *tablewidget;
     QTableWidget *propwidget;
     QMenuBar *menubar;
     QStatusBar *statusbar;
@@ -159,20 +157,6 @@ public:
         sizePolicy1.setHeightForWidth(splitter->sizePolicy().hasHeightForWidth());
         splitter->setSizePolicy(sizePolicy1);
         splitter->setOrientation(Qt::Vertical);
-        textedit = new QTextEdit(splitter);
-        textedit->setObjectName(QString::fromUtf8("textedit"));
-        sizePolicy1.setHeightForWidth(textedit->sizePolicy().hasHeightForWidth());
-        textedit->setSizePolicy(sizePolicy1);
-        QFont font;
-        font.setFamily(QString::fromUtf8("Noto Sans Mono"));
-        textedit->setFont(font);
-        textedit->setReadOnly(true);
-        splitter->addWidget(textedit);
-        tablewidget = new QTableWidget(splitter);
-        tablewidget->setObjectName(QString::fromUtf8("tablewidget"));
-        sizePolicy1.setHeightForWidth(tablewidget->sizePolicy().hasHeightForWidth());
-        tablewidget->setSizePolicy(sizePolicy1);
-        splitter->addWidget(tablewidget);
         horizontalLayoutWidget = new QWidget(splitter);
         horizontalLayoutWidget->setObjectName(QString::fromUtf8("horizontalLayoutWidget"));
         horizontalLayout_2 = new QHBoxLayout(horizontalLayoutWidget);
@@ -187,6 +171,8 @@ public:
         sizePolicy2.setHeightForWidth(offsetedit->sizePolicy().hasHeightForWidth());
         offsetedit->setSizePolicy(sizePolicy2);
         offsetedit->setMaximumSize(QSize(50, 16777215));
+        QFont font;
+        font.setFamily(QString::fromUtf8("Noto Sans Mono"));
         offsetedit->setFont(font);
         offsetedit->setStyleSheet(QString::fromUtf8("background-color: #eee;"));
         offsetedit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -226,6 +212,11 @@ public:
         horizontalLayout_2->addWidget(editscrollbar);
 
         splitter->addWidget(horizontalLayoutWidget);
+        tablewidget = new QTableWidget(splitter);
+        tablewidget->setObjectName(QString::fromUtf8("tablewidget"));
+        sizePolicy1.setHeightForWidth(tablewidget->sizePolicy().hasHeightForWidth());
+        tablewidget->setSizePolicy(sizePolicy1);
+        splitter->addWidget(tablewidget);
         splitter_2->addWidget(splitter);
         propwidget = new QTableWidget(splitter_2);
         if (propwidget->columnCount() < 3)
@@ -305,7 +296,6 @@ public:
         pagespinbox->setSuffix(QString());
         pagespinbox->setPrefix(QString());
         countlabel->setText(QCoreApplication::translate("WombatSqlite", "of ", nullptr));
-        textedit->setDocumentTitle(QString());
         offsetedit->setPlaceholderText(QCoreApplication::translate("WombatSqlite", "0000", nullptr));
         toolBar->setWindowTitle(QCoreApplication::translate("WombatSqlite", "toolBar", nullptr));
     } // retranslateUi

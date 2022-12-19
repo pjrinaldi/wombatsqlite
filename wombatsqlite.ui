@@ -155,6 +155,7 @@
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
+       <!--
        <widget class="QTextEdit" name="textedit">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -174,14 +175,7 @@
          <bool>true</bool>
         </property>
        </widget>
-       <widget class="QTableWidget" name="tablewidget">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>1</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
+       -->
        <widget class="QWidget" name="horizontalLayoutWidget">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <property name="spacing">
@@ -294,6 +288,14 @@
           </widget>
          </item>
         </layout>
+       </widget>
+       <widget class="QTableWidget" name="tablewidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
        </widget>
       </widget>
       <widget class="QTableWidget" name="propwidget">
