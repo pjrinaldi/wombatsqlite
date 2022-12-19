@@ -106,12 +106,18 @@ private slots:
     {
         statuslabel->setText(tmptext);
     };
+    void OffsetUpdate(QString tmptext)
+    {
+        hexlabel->setText("Hex Offset: 0x" + tmptext);
+    };
+
 protected:
     //void closeEvent(QCloseEvent* event);
 
 private:
     Ui::WombatSqlite* ui;
     QLabel* statuslabel;
+    QLabel* hexlabel;
     QString dbpath;
     QString olddbpath;
     QString curfilepath = "";

@@ -10,6 +10,8 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     statuslabel = new QLabel(this);
     this->statusBar()->addPermanentWidget(statuslabel, 0);
     StatusUpdate("Open a SQLite DB,WAL, or journal to Begin");
+    hexlabel = new QLabel(this);
+    this->statusBar()->addWidget(hexlabel, 0);
     connect(ui->actionOpenDB, SIGNAL(triggered()), this, SLOT(OpenDB()), Qt::DirectConnection);
     ui->tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Is Live", "Type"});
@@ -659,8 +661,13 @@ void WombatSqlite::LoadPage()
         pagecontent += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
         for(int j=0; j < 16; j++)
         {
-            hexcontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
-            pagecontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper() + " ";
+            hexcontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper();
+            pagecontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper();
+            if(j < 15)
+            {
+                hexcontent += " ";
+                pagecontent += " ";
+            }
         }
         for(int k=0; k < 16; k++)
         {
@@ -922,13 +929,14 @@ void WombatSqlite::SelectText()
 
     QTextCursor hexcursor = ui->hexedit->textCursor();
     hexcursor.setPosition(vallist.at(0).toUInt() * 3);
-    hexcursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt() * 3 - 1, QTextCursor::KeepAnchor);
+    hexcursor.setPosition((vallist.at(0).toUInt() + vallist.at(1).toUInt()) * 3 - 1, QTextCursor::KeepAnchor);
     ui->hexedit->setTextCursor(hexcursor);
 
     QTextCursor utf8cursor = ui->utf8edit->textCursor();
     utf8cursor.setPosition(vallist.at(0).toUInt());
     utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
     ui->utf8edit->setTextCursor(utf8cursor);
+    OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
 }
 
 /*
