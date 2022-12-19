@@ -940,13 +940,6 @@ void WombatSqlite::SelectText()
 }
 
 /*
- *QTextCursor c = textEdit->textCursor();
- c.setPosition(startPos);
- c.setPosition(endPos, QTextCursor::KeepAnchor);
- textEdit->setTextCursor(c);
- */ 
-
-/*
 void WombatSqlite::PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* regerr)
 {
     int subkeycount = 0;
