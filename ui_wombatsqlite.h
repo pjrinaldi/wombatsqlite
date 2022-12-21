@@ -66,7 +66,7 @@ public:
     {
         if (WombatSqlite->objectName().isEmpty())
             WombatSqlite->setObjectName(QString::fromUtf8("WombatSqlite"));
-        WombatSqlite->resize(1022, 712);
+        WombatSqlite->resize(1132, 752);
         QIcon icon;
         icon.addFile(QString::fromUtf8(":/wombat"), QSize(), QIcon::Normal, QIcon::Off);
         WombatSqlite->setWindowIcon(icon);
@@ -170,6 +170,7 @@ public:
         sizePolicy2.setVerticalStretch(0);
         sizePolicy2.setHeightForWidth(offsetedit->sizePolicy().hasHeightForWidth());
         offsetedit->setSizePolicy(sizePolicy2);
+        offsetedit->setMinimumSize(QSize(50, 0));
         offsetedit->setMaximumSize(QSize(50, 16777215));
         QFont font;
         font.setFamily(QString::fromUtf8("Noto Sans Mono"));
@@ -186,11 +187,15 @@ public:
         hexedit->setObjectName(QString::fromUtf8("hexedit"));
         sizePolicy2.setHeightForWidth(hexedit->sizePolicy().hasHeightForWidth());
         hexedit->setSizePolicy(sizePolicy2);
-        hexedit->setMaximumSize(QSize(800, 16777215));
+        hexedit->setMinimumSize(QSize(350, 0));
+        hexedit->setMaximumSize(QSize(350, 16777215));
         hexedit->setBaseSize(QSize(0, 0));
         hexedit->setFont(font);
         hexedit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         hexedit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        hexedit->setUndoRedoEnabled(false);
+        hexedit->setReadOnly(true);
+        hexedit->setTextInteractionFlags(Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse);
 
         horizontalLayout_2->addWidget(hexedit);
 
@@ -198,10 +203,15 @@ public:
         utf8edit->setObjectName(QString::fromUtf8("utf8edit"));
         sizePolicy2.setHeightForWidth(utf8edit->sizePolicy().hasHeightForWidth());
         utf8edit->setSizePolicy(sizePolicy2);
-        utf8edit->setMaximumSize(QSize(800, 16777215));
+        utf8edit->setMinimumSize(QSize(150, 0));
+        utf8edit->setMaximumSize(QSize(150, 16777215));
         utf8edit->setFont(font);
+        utf8edit->setAcceptDrops(false);
         utf8edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         utf8edit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        utf8edit->setUndoRedoEnabled(false);
+        utf8edit->setReadOnly(true);
+        utf8edit->setTextInteractionFlags(Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse);
 
         horizontalLayout_2->addWidget(utf8edit);
 
@@ -222,6 +232,8 @@ public:
         if (propwidget->columnCount() < 3)
             propwidget->setColumnCount(3);
         propwidget->setObjectName(QString::fromUtf8("propwidget"));
+        sizePolicy1.setHeightForWidth(propwidget->sizePolicy().hasHeightForWidth());
+        propwidget->setSizePolicy(sizePolicy1);
         propwidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
         propwidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         propwidget->setDragDropOverwriteMode(false);
@@ -237,7 +249,7 @@ public:
         WombatSqlite->setCentralWidget(centralwidget);
         menubar = new QMenuBar(WombatSqlite);
         menubar->setObjectName(QString::fromUtf8("menubar"));
-        menubar->setGeometry(QRect(0, 0, 1022, 22));
+        menubar->setGeometry(QRect(0, 0, 1132, 22));
         WombatSqlite->setMenuBar(menubar);
         statusbar = new QStatusBar(WombatSqlite);
         statusbar->setObjectName(QString::fromUtf8("statusbar"));
@@ -296,7 +308,9 @@ public:
         pagespinbox->setSuffix(QString());
         pagespinbox->setPrefix(QString());
         countlabel->setText(QCoreApplication::translate("WombatSqlite", "of ", nullptr));
-        offsetedit->setPlaceholderText(QCoreApplication::translate("WombatSqlite", "0000", nullptr));
+        offsetedit->setPlaceholderText(QCoreApplication::translate("WombatSqlite", "00000", nullptr));
+        hexedit->setPlaceholderText(QCoreApplication::translate("WombatSqlite", "00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff", nullptr));
+        utf8edit->setPlaceholderText(QCoreApplication::translate("WombatSqlite", "1234567890abcdef", nullptr));
         toolBar->setWindowTitle(QCoreApplication::translate("WombatSqlite", "toolBar", nullptr));
     } // retranslateUi
 

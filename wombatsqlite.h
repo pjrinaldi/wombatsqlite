@@ -48,26 +48,26 @@ struct JournalHeader
 
 struct SqliteHeader
 {
-        char header[16];
-        //QString sqliteheader; // = QString::fromStdString(pageheader->mid(0, 16).toStdString());
-        quint16 pagesize; // = qFromBigEndian<quint16>(pageheader->mid(16, 2));
-        quint8 writever; // = qFromBigEndian<quint8>(pageheader->mid(18, 1));
-        quint8 readver; // = qFromBigEndian<quint8>(pageheader->mid(19, 1));
-        quint8 unusedpagespace; // = qFromBigEndian<quint8>(pageheader->mid(20, 1));
-        quint32 pagecount; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
-        quint32 firstfreepagenum; // = qFromBigEndian<quint32>(pageheader->mid(32, 4));
-        quint32 freepagescount; // 36, 4
-        quint32 schemacookie; // 40, 4
-        quint32 schemaformat; // 44, 4 - 1,2,3,4
-        quint32 pagecachesize; // 48, 4
-        quint32 largestrootbtreepagenumber; // 52, 4 - or zero
-        quint32 textencoding; // 56, 4 - 1 utf-8, 2 utf-16le, 3 utf-16be
-        quint32 userversion; // 60, 4
-        quint32 incrementalvacuummodebool; // 64, 4 - 0 = false, otherwise true
-        quint32 appid; // 68, 4
-        char reserved[20]; // 72, 20
-        quint32 versionvalidfornum; // 92, 4
-        quint32 sqliteversion; // 96, 4
+    //char header[16];
+    QString header; // = QString::fromStdString(pageheader->mid(0, 16).toStdString());
+    quint16 pagesize; // = qFromBigEndian<quint16>(pageheader->mid(16, 2));
+    quint8 writeversion; // = qFromBigEndian<quint8>(pageheader->mid(18, 1));
+    quint8 readversion; // = qFromBigEndian<quint8>(pageheader->mid(19, 1));
+    quint8 unusedpagespace; // = qFromBigEndian<quint8>(pageheader->mid(20, 1));
+    quint32 pagecount; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+    quint32 firstfreepagenum; // = qFromBigEndian<quint32>(pageheader->mid(32, 4));
+    quint32 freepagescount; // 36, 4
+    quint32 schemacookie; // 40, 4
+    quint32 schemaformat; // 44, 4 - 1,2,3,4
+    quint32 pagecachesize; // 48, 4
+    quint32 largestrootbtreepagenumber; // 52, 4 - or zero
+    quint32 textencoding; // 56, 4 - 1 utf-8, 2 utf-16le, 3 utf-16be
+    quint32 userversion; // 60, 4
+    quint32 incrementalvacuummodebool; // 64, 4 - 0 = false, otherwise true
+    quint32 appid; // 68, 4
+    char reserved[20]; // 72, 20
+    quint32 versionvalidfornum; // 92, 4
+    quint32 version; // 96, 4
 };
 
 namespace Ui

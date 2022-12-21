@@ -770,16 +770,35 @@ void WombatSqlite::ParseHeader(QByteArray* pageheader)
     }
     else if(filetype == 2) // JOURNAL
     {
-        //JournalHeader* jnlhdrptr = NULL;
-        //jnlhdrptr = reinterpret_cast<JournalHeader*>(pageheader->mid(0, 28).data());
-        //qDebug() << "jnlpagesize:" << jnlhdrptr->jnlpagesize;
+	journalheader.header = qFromBigEndian<quint64>(pageheader->mid(0,8));
+	journalheader.pagecnt = qFromBigEndian<quint32>(pageheader->mid(8, 4));
+	journalheader.randomnonce = qFromBigEndian<quint32>(pageheader->mid(12, 4));
+	journalheader.initsize = qFromBigEndian<quint32>(pageheader->mid(16, 4));
+	journalheader.sectorsize = qFromBigEndian<quint32>(pageheader->mid(20, 4));
+	journalheader.pagesize = qFromBigEndian<quint32>(pageheader->mid(24, 4));
+	//qDebug() << "journal header:" << QString::number(journalheader.header, 16);
     }
     else if(filetype == 3) // SQLITE DB
     {
-        //SqliteHeader* sqlhdrptr = NULL;
-        //sqlhdrptr = reinterpret_cast<SqliteHeader*>(pageheader->mid(0, 100).data());
-        //printf("sqlite header: %s\n", sqlhdrptr->sqlheader);
-        //qDebug() << "page size:" << sqlhdrptr->dbpagesize;
+	sqliteheader.header = QString::fromStdString(pageheader->mid(0, 16).toStdString());
+	sqliteheader.pagesize = qFromBigEndian<quint16>(pageheader->mid(16, 2));
+	sqliteheader.writeversion = qFromBigEndian<quint8>(pageheader->mid(18, 1));
+	sqliteheader.readversion = qFromBigEndian<quint8>(pageheader->mid(19, 1));
+	sqliteheader.unusedpagespace = qFromBigEndian<quint8>(pageheader->mid(20, 1));
+	sqliteheader.pagecount = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+	sqliteheader.firstfreepagenum = qFromBigEndian<quint32>(pageheader->mid(32, 4));
+	sqliteheader.freepagescount = qFromBigEndian<quint32>(pageheader->mid(36, 4));
+	sqliteheader.schemacookie = qFromBigEndian<quint32>(pageheader->mid(40, 4));
+	sqliteheader.schemaformat = qFromBigEndian<quint32>(pageheader->mid(44, 4));
+	sqliteheader.pagecachesize = qFromBigEndian<quint32>(pageheader->mid(48, 4));
+	sqliteheader.largestrootbtreepagenumber = qFromBigEndian<quint32>(pageheader->mid(52, 4));
+	sqliteheader.textencoding = qFromBigEndian<quint32>(pageheader->mid(56, 4));
+	sqliteheader.userversion = qFromBigEndian<quint32>(pageheader->mid(60, 4));
+	sqliteheader.incrementalvacuummodebool = qFromBigEndian<quint32>(pageheader->mid(64, 4));
+	sqliteheader.appid = qFromBigEndian<quint32>(pageheader->mid(68, 4));
+	sqliteheader.versionvalidfornum = qFromBigEndian<quint32>(pageheader->mid(92, 4));
+	sqliteheader.version = qFromBigEndian<quint32>(pageheader->mid(96, 4));
+	//qDebug() << "sqlite header:" << sqliteheader.header;
     }
 }
 
@@ -816,46 +835,86 @@ void WombatSqlite::PopulateHeader()
     }
     else if(filetype == 2) // JOURNAL
     {
+        ui->propwidget->setRowCount(6);
+        ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
+        ui->propwidget->setItem(0, 0, new QTableWidgetItem("0, 8"));
+        ui->propwidget->setItem(0, 1, new QTableWidgetItem(QString("0x" + QString("%1").arg(journalheader.header, 8, 16, QChar('0')).toUpper())));
+        ui->propwidget->setItem(0, 2, new QTableWidgetItem("JOURNAL HEADER"));
+	ui->propwidget->setItem(1, 0, new QTableWidgetItem("8, 4"));
+	ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(journalheader.pagecnt)));
+	ui->propwidget->setItem(1, 2, new QTableWidgetItem("Journal Page Count"));
+	ui->propwidget->setItem(2, 0, new QTableWidgetItem("12, 4"));
+	ui->propwidget->setItem(2, 1, new QTableWidgetItem(QString::number(journalheader.randomnonce)));
+	ui->propwidget->setItem(2, 2, new QTableWidgetItem("Journal Random Nonce"));
+	ui->propwidget->setItem(3, 0, new QTableWidgetItem("16, 4"));
+	ui->propwidget->setItem(3, 1, new QTableWidgetItem(QString::number(journalheader.initsize)));
+	ui->propwidget->setItem(3, 2, new QTableWidgetItem("Journal Initial Size"));
+	ui->propwidget->setItem(4, 0, new QTableWidgetItem("20, 4"));
+	ui->propwidget->setItem(4, 1, new QTableWidgetItem(QString::number(journalheader.sectorsize)));
+	ui->propwidget->setItem(4, 2, new QTableWidgetItem("Journal Sector Size"));
+	ui->propwidget->setItem(5, 0, new QTableWidgetItem("24, 4"));
+	ui->propwidget->setItem(5, 1, new QTableWidgetItem(QString::number(journalheader.pagesize)));
+	ui->propwidget->setItem(5, 2, new QTableWidgetItem("Journal Page Size"));
     }
     else if(filetype == 3) // SQLITE DB
     {
+        ui->propwidget->setRowCount(18);
+        ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
+        ui->propwidget->setItem(0, 0, new QTableWidgetItem("0, 16"));
+        ui->propwidget->setItem(0, 1, new QTableWidgetItem(sqliteheader.header));
+        ui->propwidget->setItem(0, 2, new QTableWidgetItem("SQLITE HEADER"));
+	ui->propwidget->setItem(1, 0, new QTableWidgetItem("16, 2"));
+	ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(sqliteheader.pagesize)));
+	ui->propwidget->setItem(1, 2, new QTableWidgetItem("SQLite Page Size"));
+	ui->propwidget->setItem(2, 0, new QTableWidgetItem("18, 1"));
+	ui->propwidget->setItem(2, 1, new QTableWidgetItem(QString::number(sqliteheader.writeversion)));
+	ui->propwidget->setItem(2, 2, new QTableWidgetItem("SQLite Write Version"));
+	ui->propwidget->setItem(3, 0, new QTableWidgetItem("19, 1"));
+	ui->propwidget->setItem(3, 1, new QTableWidgetItem(QString::number(sqliteheader.readversion)));
+	ui->propwidget->setItem(3, 2, new QTableWidgetItem("SQLite Read Version"));
+	ui->propwidget->setItem(4, 0, new QTableWidgetItem("20, 1"));
+	ui->propwidget->setItem(4, 1, new QTableWidgetItem(QString::number(sqliteheader.unusedpagespace)));
+	ui->propwidget->setItem(4, 2, new QTableWidgetItem("SQLite Unused Page Space"));
+	ui->propwidget->setItem(5, 0, new QTableWidgetItem("28, 4"));
+	ui->propwidget->setItem(5, 1, new QTableWidgetItem(QString::number(sqliteheader.pagecount)));
+	ui->propwidget->setItem(5, 2, new QTableWidgetItem("SQLite Page Count"));
+	ui->propwidget->setItem(6, 0, new QTableWidgetItem("32, 4"));
+	ui->propwidget->setItem(6, 1, new QTableWidgetItem(QString::number(sqliteheader.firstfreepagenum)));
+	ui->propwidget->setItem(6, 2, new QTableWidgetItem("SQLite First Free Page Number"));
+	ui->propwidget->setItem(7, 0, new QTableWidgetItem("36, 4"));
+	ui->propwidget->setItem(7, 1, new QTableWidgetItem(QString::number(sqliteheader.freepagescount)));
+	ui->propwidget->setItem(7, 2, new QTableWidgetItem("SQLite Free Pages Count"));
+	ui->propwidget->setItem(8, 0, new QTableWidgetItem("40, 4"));
+	ui->propwidget->setItem(8, 1, new QTableWidgetItem(QString::number(sqliteheader.schemacookie)));
+	ui->propwidget->setItem(8, 2, new QTableWidgetItem("SQLite Schema Cookie"));
+	ui->propwidget->setItem(9, 0, new QTableWidgetItem("44, 4"));
+	ui->propwidget->setItem(9, 1, new QTableWidgetItem(QString::number(sqliteheader.schemaformat)));
+	ui->propwidget->setItem(9, 2, new QTableWidgetItem("SQLite Schema Format"));
+	ui->propwidget->setItem(10, 0, new QTableWidgetItem("48, 4"));
+	ui->propwidget->setItem(10, 1, new QTableWidgetItem(QString::number(sqliteheader.pagecachesize)));
+	ui->propwidget->setItem(10, 2, new QTableWidgetItem("SQLite Page Cache Size"));
+	ui->propwidget->setItem(11, 0, new QTableWidgetItem("52, 4"));
+	ui->propwidget->setItem(11, 1, new QTableWidgetItem(QString::number(sqliteheader.largestrootbtreepagenumber)));
+	ui->propwidget->setItem(11, 2, new QTableWidgetItem("SQLite Largest Root B-Tree Page Number"));
+	ui->propwidget->setItem(12, 0, new QTableWidgetItem("56, 4"));
+	ui->propwidget->setItem(12, 1, new QTableWidgetItem(QString::number(sqliteheader.textencoding)));
+	ui->propwidget->setItem(12, 2, new QTableWidgetItem("SQLite Text Encoding"));
+	ui->propwidget->setItem(13, 0, new QTableWidgetItem("60, 4"));
+	ui->propwidget->setItem(13, 1, new QTableWidgetItem(QString::number(sqliteheader.userversion)));
+	ui->propwidget->setItem(13, 2, new QTableWidgetItem("SQLite User Version"));
+	ui->propwidget->setItem(14, 0, new QTableWidgetItem("64, 4"));
+	ui->propwidget->setItem(14, 1, new QTableWidgetItem(QString::number(sqliteheader.incrementalvacuummodebool)));
+	ui->propwidget->setItem(14, 2, new QTableWidgetItem("SQLite Incremental Vacuum Mode Boolean"));
+	ui->propwidget->setItem(15, 0, new QTableWidgetItem("68, 4"));
+	ui->propwidget->setItem(15, 1, new QTableWidgetItem(QString::number(sqliteheader.appid)));
+	ui->propwidget->setItem(15, 2, new QTableWidgetItem("SQLite App ID"));
+	ui->propwidget->setItem(16, 0, new QTableWidgetItem("92, 4"));
+	ui->propwidget->setItem(16, 1, new QTableWidgetItem(QString::number(sqliteheader.versionvalidfornum)));
+	ui->propwidget->setItem(16, 2, new QTableWidgetItem("SQLite Version Valid for Number"));
+	ui->propwidget->setItem(17, 0, new QTableWidgetItem("96, 4"));
+	ui->propwidget->setItem(17, 1, new QTableWidgetItem(QString::number(sqliteheader.version)));
+	ui->propwidget->setItem(17, 2, new QTableWidgetItem("SQLite Version"));
     }
-    /*
-struct JournalHeader
-{
-    quint64 jnlheader; //= qFromBigEndian<quint64>(pageheader->mid(0, 8));
-    quint32 jnlpagecnt; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
-    quint32 randomnonce; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
-    quint32 initsize; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
-    quint32 sectorsize; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
-    quint32 jnlpagesize; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
-};
-
-struct SqliteHeader
-{
-        char sqlheader[16];
-        //QString sqliteheader; // = QString::fromStdString(pageheader->mid(0, 16).toStdString());
-        quint16 dbpagesize; // = qFromBigEndian<quint16>(pageheader->mid(16, 2));
-        quint8 writever; // = qFromBigEndian<quint8>(pageheader->mid(18, 1));
-        quint8 readver; // = qFromBigEndian<quint8>(pageheader->mid(19, 1));
-        quint8 unusedpagespace; // = qFromBigEndian<quint8>(pageheader->mid(20, 1));
-        quint32 dbpagecount; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
-        quint32 firstfreepagenum; // = qFromBigEndian<quint32>(pageheader->mid(32, 4));
-        quint32 freepagescount; // 36, 4
-        quint32 schemacookie; // 40, 4
-        quint32 schemaformat; // 44, 4 - 1,2,3,4
-        quint32 pagecachesize; // 48, 4
-        quint32 largestrootbtreepagenumber; // 52, 4 - or zero
-        quint32 textencoding; // 56, 4 - 1 utf-8, 2 utf-16le, 3 utf-16be
-        quint32 userversion; // 60, 4
-        quint32 incrementalvacuummodebool; // 64, 4 - 0 = false, otherwise true
-        quint32 appid; // 68, 4
-        char reserved[20]; // 72, 20
-        quint32 versionvalidfornum; // 92, 4
-        quint32 sqliteversion; // 96, 4
-};
-
-     */ 
 }
 
 /*
@@ -959,8 +1018,11 @@ void WombatSqlite::SelectText()
     qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
     if(vallist.at(0).toUInt() > 15)
     {
-    utf8cursor.setPosition(vallist.at(0).toUInt() + 1);
-    utf8cursor.setPosition(vallist.at(0).toUInt() + 1 + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+	uint linenumber = vallist.at(0).toUInt() / 15;
+	if(linenumber > 2)
+	    linenumber = 2;
+    utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
+    utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
     }
     else
     {
