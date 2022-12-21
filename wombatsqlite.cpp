@@ -1018,16 +1018,14 @@ void WombatSqlite::SelectText()
     qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
     if(vallist.at(0).toUInt() > 15)
     {
-	uint linenumber = vallist.at(0).toUInt() / 15;
-	if(linenumber > 2)
-	    linenumber = 2;
-    utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
-    utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+	uint linenumber = vallist.at(0).toUInt() / 16;
+	utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
+	utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
     }
     else
     {
-    utf8cursor.setPosition(vallist.at(0).toUInt());
-    utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+	utf8cursor.setPosition(vallist.at(0).toUInt());
+	utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
     }
     ui->utf8edit->setTextCursor(utf8cursor);
 
