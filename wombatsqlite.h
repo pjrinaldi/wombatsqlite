@@ -129,7 +129,7 @@ private:
     void LoadPage(void);
     void ParseHeader(QByteArray* pageheader);
     void PopulateHeader(void);
-    //void LoadPage(QString filepath, quint8 filepath, curitem->data(257).toUInt(), curitem->data(258).toUInt());
+    void ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage);
     //void PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* curerr);
     QString DecryptRot13(QString encstr);
     QChar Rot13Char(QChar curchar);

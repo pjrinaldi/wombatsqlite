@@ -207,7 +207,7 @@ public:
         utf8edit->setMaximumSize(QSize(150, 16777215));
         utf8edit->setFont(font);
         utf8edit->setAcceptDrops(false);
-        utf8edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        utf8edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         utf8edit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         utf8edit->setUndoRedoEnabled(false);
         utf8edit->setReadOnly(true);

@@ -19,6 +19,10 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
     connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
     connect(ui->editscrollbar, SIGNAL(valueChanged(int)), this, SLOT(ScrollHex(int)), Qt::DirectConnection);
+    ui->offsetedit->setVerticalScrollBar(ui->editscrollbar);
+    ui->hexedit->setVerticalScrollBar(ui->editscrollbar);
+    ui->utf8edit->setVerticalScrollBar(ui->editscrollbar);
+    ui->editscrollbar->setVisible(true);
     //connect(ui->offsetedit, ui->hexedit, ui->utf8edit, ui->editscrollbar
     /*
     connect(ui->treewidget, SIGNAL(itemSelectionChanged()), this, SLOT(KeySelected()), Qt::DirectConnection);
@@ -632,7 +636,8 @@ void WombatSqlite::LoadPage()
     dbfile.open(QIODevice::ReadOnly);
     if(dbfile.isOpen())
     {
-        dbfile.seek(curpage - 1 * pagesize);
+        dbfile.seek((curpage - 1) * pagesize);
+        //qDebug() << "dbfile offset:" << dbfile.pos();
         pagearray = dbfile.read(pagesize);
         dbfile.close();
     }
@@ -642,14 +647,11 @@ void WombatSqlite::LoadPage()
         ParseHeader(&pghdrarray);
         PopulateHeader();
     }
+    ParsePageHeader(&pagearray, filetype, curpage);
     QString offsetcontent = "";
     QString hexcontent = "";
     QString utf8content = "";
-    //QString pagecontent = "";
-    //QString pagecontent = "<html><body>";
     int linecount = pagearray.size() / 16;
-    //int remainder = pagearray.size() % 16;
-    //qDebug() << "linecount:" << linecount << "remainder:" << remainder;
 
     ui->editscrollbar->setMaximum(linecount - 1);
     ui->editscrollbar->setMinimum(0);
@@ -658,100 +660,29 @@ void WombatSqlite::LoadPage()
     for(int i=0; i < linecount; i++)
     {
         offsetcontent += QString::number(i*16, 16).rightJustified(5, '0') + "\n";
-        //pagecontent += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
         for(int j=0; j < 16; j++)
         {
             hexcontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper();
-            //pagecontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper();
             if(j < 15)
             {
                 hexcontent += " ";
-                //pagecontent += " ";
             }
             QChar curchar = QChar(pagearray.at(j+i*16));
             if(!curchar.isPrint())
                 utf8content += ".";
             else
                 utf8content += curchar;
-            /*
-            if(!QChar(pagearray.at(j+i*16)).isPrint())
-            {
-                //pagecontent += ".";
-                utf8content += ".";
-            }
-            else
-            {
-                //pagecontent += QString("%1").arg(pagearray.at(k+i*16));
-                utf8content += QChar(pagearray.at(j+i*16));
-                //utf8content += QString("%1").arg(pagearray.at(j+i*16));
-            }
-            */
         }
-        /*
-        for(int k=0; k < 16; k++)
-        {
-            if(!QChar(pagearray.at(k+i*16)).isPrint())
-            {
-                //pagecontent += ".";
-                utf8content += ".";
-            }
-            else
-            {
-                //pagecontent += QString("%1").arg(pagearray.at(k+i*16));
-                utf8content += QString("%1").arg(pagearray.at(k+i*16));
-            }
-        }
-        */
         hexcontent += "\n";
         utf8content += "\n";
-        //pagecontent += "\n";
-        //pagecontent += "<br/>\n";
     }
-    //pagecontent += "</body></html>";
-    //ui->textedit->setPlainText(pagecontent);
-    //ui->textedit->setHtml(pagecontent);
-
     ui->offsetedit->setPlainText(offsetcontent);
     ui->hexedit->setPlainText(hexcontent);
     ui->utf8edit->setPlainText(utf8content);
 
-    //ui->textedit->setPlainText(pagecontent);
-    //pagecontent = "";
     offsetcontent = "";
     hexcontent = "";
     utf8content = "";
-
-    //qDebug() << "pagearray size:" << pagearray.size() << "pagesize:" << pagesize;
-    /*
-     *  size_t datasize = 0;
-        libregf_value_get_value_data_size(curval, &datasize, &regerr);
-        uint8_t data[datasize];
-        libregf_value_get_value_data(curval, data, datasize, &regerr);
-        QByteArray dataarray = QByteArray::fromRawData((char*)data, datasize);
-        valuedata += "\n\nBinary Content\n--------------\n\n";
-        int linecount = datasize / 16;
-        //int remainder = datasize % 16;
-        for(int i=0; i < linecount; i++)
-        {
-            valuedata += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
-            for(int j=0; j < 16; j++)
-            {
-                valuedata += QString("%1").arg(data[j+i*16], 2, 16, QChar('0')).toUpper() + " ";
-            }
-            for(int j=0; j < 16; j++)
-            {
-                if(!QChar(dataarray.at(j+i*16)).isPrint())
-                {
-                    valuedata += ".";
-                }
-                else
-                    valuedata += QString("%1").arg(dataarray.at(j+i*16));
-            }
-            valuedata += "\n";
-        }
-	ui->plaintext->setPlainText(valuedata);
-
-     */ 
 }
 
 void WombatSqlite::ParseHeader(QByteArray* pageheader)
@@ -917,6 +848,25 @@ void WombatSqlite::PopulateHeader()
     }
 }
 
+void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage)
+{
+    quint64 curpos = 0;
+    if(curpage == 1) // get page header after the file header, so set new curpos here
+    {
+        if(filetype == 1)
+        {
+        }
+        else if(filetype == 2)
+        {
+        }
+        else if(filetype == 3)
+        {
+        }
+    }
+    // start at zero since it's not the 1st page
+    // get the 1st byte to determine based on offset, either zero or the end of header based on file header
+}
+
 /*
 void WombatSqlite::closeEvent(QCloseEvent* e)
 {
@@ -1015,7 +965,7 @@ void WombatSqlite::SelectText()
     ui->hexedit->setTextCursor(hexcursor);
 
     QTextCursor utf8cursor = ui->utf8edit->textCursor();
-    qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
+    //qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
     if(vallist.at(0).toUInt() > 15)
     {
 	uint linenumber = vallist.at(0).toUInt() / 16;
