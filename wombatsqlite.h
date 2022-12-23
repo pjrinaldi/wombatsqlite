@@ -136,6 +136,7 @@ private:
     quint64 pagecount = 0;
     quint32 pagesize = 0;
     quint64 curpage = 0;
+    void AddProperty(int row, QString offlen, QString val, QString desc);
     void LoadPage(void);
     void ParseHeader(QByteArray* pageheader);
     void PopulateHeader(void);

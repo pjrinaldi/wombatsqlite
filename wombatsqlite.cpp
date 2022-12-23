@@ -440,6 +440,7 @@ void WombatSqlite::PageChanged(int cpage)
 {
     if(ui->treewidget->currentItem() != NULL)
     {
+        ui->propwidget->setCurrentItem(NULL);
         ui->treewidget->currentItem()->setData(258, cpage);
         curpage = cpage;
         LoadPage();
@@ -579,119 +580,61 @@ void WombatSqlite::ParseHeader(QByteArray* pageheader)
     }
 }
 
+void WombatSqlite::AddProperty(int row, QString offlen, QString val, QString desc)
+{
+    ui->propwidget->setItem(row, 0, new QTableWidgetItem(offlen));
+    ui->propwidget->setItem(row, 1, new QTableWidgetItem(val));
+    ui->propwidget->setItem(row, 2, new QTableWidgetItem(desc));
+}
+
 void WombatSqlite::PopulateHeader()
 {
+    ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
     if(filetype == 1) // WAL
     {
         ui->propwidget->setRowCount(8);
-        ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
-        ui->propwidget->setItem(0, 0, new QTableWidgetItem("0, 4"));
-        ui->propwidget->setItem(0, 1, new QTableWidgetItem(QString("0x" + QString("%1").arg(walheader.header, 8, 16, QChar('0')).toUpper())));
-        ui->propwidget->setItem(0, 2, new QTableWidgetItem("WAL HEADER, last byte is either 0x82 or 0x83 which means something i forget right now"));
-        ui->propwidget->setItem(1, 0, new QTableWidgetItem("4, 4"));
-        ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(walheader.fileversion)));
-        ui->propwidget->setItem(1, 2, new QTableWidgetItem("WAL File Version"));
-        ui->propwidget->setItem(2, 0, new QTableWidgetItem("8, 4"));
-        ui->propwidget->setItem(2, 1, new QTableWidgetItem(QString::number(walheader.pagesize)));
-        ui->propwidget->setItem(2, 2, new QTableWidgetItem("WAL Page Size"));
-        ui->propwidget->setItem(3, 0, new QTableWidgetItem("12, 4"));
-        ui->propwidget->setItem(3, 1, new QTableWidgetItem(QString::number(walheader.checkptseqnum)));
-        ui->propwidget->setItem(3, 2, new QTableWidgetItem("WAL Checkpoint Sequence Number"));
-        ui->propwidget->setItem(4, 0, new QTableWidgetItem("16, 4"));
-        ui->propwidget->setItem(4, 1, new QTableWidgetItem(QString::number(walheader.salt1)));
-        ui->propwidget->setItem(4, 2, new QTableWidgetItem("WAL Salt 1"));
-        ui->propwidget->setItem(5, 0, new QTableWidgetItem("20, 4"));
-        ui->propwidget->setItem(5, 1, new QTableWidgetItem(QString::number(walheader.salt2)));
-        ui->propwidget->setItem(5, 2, new QTableWidgetItem("WAL Salt 2"));
-        ui->propwidget->setItem(6, 0, new QTableWidgetItem("24, 4"));
-        ui->propwidget->setItem(6, 1, new QTableWidgetItem(QString::number(walheader.checksum1)));
-        ui->propwidget->setItem(6, 2, new QTableWidgetItem("WAL Checksum 1"));
-        ui->propwidget->setItem(7, 0, new QTableWidgetItem("28, 4"));
-        ui->propwidget->setItem(7, 1, new QTableWidgetItem(QString::number(walheader.checksum2)));
-        ui->propwidget->setItem(7, 2, new QTableWidgetItem("WAL Checksum 2"));
+        AddProperty(0, "0, 4", QString("0x" + QString("%1").arg(walheader.header, 8, 16, QChar('0')).toUpper()), "WAL HEADER, last byte is either 0x82 or 0x83 which means something i forget right now");
+        AddProperty(1, "4, 4", QString::number(walheader.fileversion), "WAL File Version");
+        AddProperty(2, "8, 4", QString::number(walheader.pagesize), "WAL Page Size");
+        AddProperty(3, "12, 4", QString::number(walheader.checkptseqnum), "WAL Checkpoint Sequence Number");
+        AddProperty(4, "16, 4", QString::number(walheader.salt1), "WAL Salt 1");
+        AddProperty(5, "20, 4", QString::number(walheader.salt2), "WAL Salt 2");
+        AddProperty(6, "24, 4", QString::number(walheader.checksum1), "WAL Checksum 1");
+        AddProperty(7, "28, 4", QString::number(walheader.checksum2), "WAL Checksum 2");
     }
     else if(filetype == 2) // JOURNAL
     {
         ui->propwidget->setRowCount(6);
-        ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
-        ui->propwidget->setItem(0, 0, new QTableWidgetItem("0, 8"));
-        ui->propwidget->setItem(0, 1, new QTableWidgetItem(QString("0x" + QString("%1").arg(journalheader.header, 8, 16, QChar('0')).toUpper())));
-        ui->propwidget->setItem(0, 2, new QTableWidgetItem("JOURNAL HEADER"));
-	ui->propwidget->setItem(1, 0, new QTableWidgetItem("8, 4"));
-	ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(journalheader.pagecnt)));
-	ui->propwidget->setItem(1, 2, new QTableWidgetItem("Journal Page Count"));
-	ui->propwidget->setItem(2, 0, new QTableWidgetItem("12, 4"));
-	ui->propwidget->setItem(2, 1, new QTableWidgetItem(QString::number(journalheader.randomnonce)));
-	ui->propwidget->setItem(2, 2, new QTableWidgetItem("Journal Random Nonce"));
-	ui->propwidget->setItem(3, 0, new QTableWidgetItem("16, 4"));
-	ui->propwidget->setItem(3, 1, new QTableWidgetItem(QString::number(journalheader.initsize)));
-	ui->propwidget->setItem(3, 2, new QTableWidgetItem("Journal Initial Size"));
-	ui->propwidget->setItem(4, 0, new QTableWidgetItem("20, 4"));
-	ui->propwidget->setItem(4, 1, new QTableWidgetItem(QString::number(journalheader.sectorsize)));
-	ui->propwidget->setItem(4, 2, new QTableWidgetItem("Journal Sector Size"));
-	ui->propwidget->setItem(5, 0, new QTableWidgetItem("24, 4"));
-	ui->propwidget->setItem(5, 1, new QTableWidgetItem(QString::number(journalheader.pagesize)));
-	ui->propwidget->setItem(5, 2, new QTableWidgetItem("Journal Page Size"));
+        AddProperty(0, "0, 8", QString("0x" + QString("%1").arg(journalheader.header, 8, 16, QChar('0')).toUpper()), "JOURNAL HEADER");
+        AddProperty(1, "8, 4", QString::number(journalheader.pagecnt), "Journal Page Count");
+        AddProperty(2, "12, 4", QString::number(journalheader.randomnonce), "Journal Random Nonce");
+        AddProperty(3, "16, 4", QString::number(journalheader.initsize), "Journal Initial Size");
+        AddProperty(4, "20, 4", QString::number(journalheader.sectorsize), "Journal Sector Size");
+        AddProperty(5, "24, 4", QString::number(journalheader.pagesize), "Journal Page Size");
     }
     else if(filetype == 3) // SQLITE DB
     {
         ui->propwidget->setRowCount(18);
-        ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
-        ui->propwidget->setItem(0, 0, new QTableWidgetItem("0, 16"));
-        ui->propwidget->setItem(0, 1, new QTableWidgetItem(sqliteheader.header));
-        ui->propwidget->setItem(0, 2, new QTableWidgetItem("SQLITE HEADER"));
-	ui->propwidget->setItem(1, 0, new QTableWidgetItem("16, 2"));
-	ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(sqliteheader.pagesize)));
-	ui->propwidget->setItem(1, 2, new QTableWidgetItem("SQLite Page Size"));
-	ui->propwidget->setItem(2, 0, new QTableWidgetItem("18, 1"));
-	ui->propwidget->setItem(2, 1, new QTableWidgetItem(QString::number(sqliteheader.writeversion)));
-	ui->propwidget->setItem(2, 2, new QTableWidgetItem("SQLite Write Version"));
-	ui->propwidget->setItem(3, 0, new QTableWidgetItem("19, 1"));
-	ui->propwidget->setItem(3, 1, new QTableWidgetItem(QString::number(sqliteheader.readversion)));
-	ui->propwidget->setItem(3, 2, new QTableWidgetItem("SQLite Read Version"));
-	ui->propwidget->setItem(4, 0, new QTableWidgetItem("20, 1"));
-	ui->propwidget->setItem(4, 1, new QTableWidgetItem(QString::number(sqliteheader.unusedpagespace)));
-	ui->propwidget->setItem(4, 2, new QTableWidgetItem("SQLite Unused Page Space"));
-	ui->propwidget->setItem(5, 0, new QTableWidgetItem("28, 4"));
-	ui->propwidget->setItem(5, 1, new QTableWidgetItem(QString::number(sqliteheader.pagecount)));
-	ui->propwidget->setItem(5, 2, new QTableWidgetItem("SQLite Page Count"));
-	ui->propwidget->setItem(6, 0, new QTableWidgetItem("32, 4"));
-	ui->propwidget->setItem(6, 1, new QTableWidgetItem(QString::number(sqliteheader.firstfreepagenum)));
-	ui->propwidget->setItem(6, 2, new QTableWidgetItem("SQLite First Free Page Number"));
-	ui->propwidget->setItem(7, 0, new QTableWidgetItem("36, 4"));
-	ui->propwidget->setItem(7, 1, new QTableWidgetItem(QString::number(sqliteheader.freepagescount)));
-	ui->propwidget->setItem(7, 2, new QTableWidgetItem("SQLite Free Pages Count"));
-	ui->propwidget->setItem(8, 0, new QTableWidgetItem("40, 4"));
-	ui->propwidget->setItem(8, 1, new QTableWidgetItem(QString::number(sqliteheader.schemacookie)));
-	ui->propwidget->setItem(8, 2, new QTableWidgetItem("SQLite Schema Cookie"));
-	ui->propwidget->setItem(9, 0, new QTableWidgetItem("44, 4"));
-	ui->propwidget->setItem(9, 1, new QTableWidgetItem(QString::number(sqliteheader.schemaformat)));
-	ui->propwidget->setItem(9, 2, new QTableWidgetItem("SQLite Schema Format"));
-	ui->propwidget->setItem(10, 0, new QTableWidgetItem("48, 4"));
-	ui->propwidget->setItem(10, 1, new QTableWidgetItem(QString::number(sqliteheader.pagecachesize)));
-	ui->propwidget->setItem(10, 2, new QTableWidgetItem("SQLite Page Cache Size"));
-	ui->propwidget->setItem(11, 0, new QTableWidgetItem("52, 4"));
-	ui->propwidget->setItem(11, 1, new QTableWidgetItem(QString::number(sqliteheader.largestrootbtreepagenumber)));
-	ui->propwidget->setItem(11, 2, new QTableWidgetItem("SQLite Largest Root B-Tree Page Number"));
-	ui->propwidget->setItem(12, 0, new QTableWidgetItem("56, 4"));
-	ui->propwidget->setItem(12, 1, new QTableWidgetItem(QString::number(sqliteheader.textencoding)));
-	ui->propwidget->setItem(12, 2, new QTableWidgetItem("SQLite Text Encoding"));
-	ui->propwidget->setItem(13, 0, new QTableWidgetItem("60, 4"));
-	ui->propwidget->setItem(13, 1, new QTableWidgetItem(QString::number(sqliteheader.userversion)));
-	ui->propwidget->setItem(13, 2, new QTableWidgetItem("SQLite User Version"));
-	ui->propwidget->setItem(14, 0, new QTableWidgetItem("64, 4"));
-	ui->propwidget->setItem(14, 1, new QTableWidgetItem(QString::number(sqliteheader.incrementalvacuummodebool)));
-	ui->propwidget->setItem(14, 2, new QTableWidgetItem("SQLite Incremental Vacuum Mode Boolean"));
-	ui->propwidget->setItem(15, 0, new QTableWidgetItem("68, 4"));
-	ui->propwidget->setItem(15, 1, new QTableWidgetItem(QString::number(sqliteheader.appid)));
-	ui->propwidget->setItem(15, 2, new QTableWidgetItem("SQLite App ID"));
-	ui->propwidget->setItem(16, 0, new QTableWidgetItem("92, 4"));
-	ui->propwidget->setItem(16, 1, new QTableWidgetItem(QString::number(sqliteheader.versionvalidfornum)));
-	ui->propwidget->setItem(16, 2, new QTableWidgetItem("SQLite Version Valid for Number"));
-	ui->propwidget->setItem(17, 0, new QTableWidgetItem("96, 4"));
-	ui->propwidget->setItem(17, 1, new QTableWidgetItem(QString::number(sqliteheader.version)));
-	ui->propwidget->setItem(17, 2, new QTableWidgetItem("SQLite Version"));
+        AddProperty(0, "0, 16", sqliteheader.header, "SQLITE HEADER");
+        AddProperty(1, "16, 2", QString::number(sqliteheader.pagesize), "SQLite Page Size");
+        AddProperty(2, "18, 1", QString::number(sqliteheader.writeversion), "SQLite Write Version");
+        AddProperty(3, "19, 1", QString::number(sqliteheader.readversion), "SQLite Read Version");
+        AddProperty(4, "20, 1", QString::number(sqliteheader.unusedpagespace), "SQLite Unused Page Space");
+        AddProperty(5, "28, 4", QString::number(sqliteheader.pagecount), "SQLite Page Count");
+        AddProperty(6, "32, 4", QString::number(sqliteheader.firstfreepagenum), "SQLite First Free Page Number");
+        AddProperty(7, "36, 4", QString::number(sqliteheader.freepagescount), "SQLite Free Pages Count");
+        AddProperty(8, "40, 4", QString::number(sqliteheader.schemacookie), "SQLite Schema Cookie");
+        AddProperty(9, "44, 4", QString::number(sqliteheader.schemaformat), "SQLite Schema Format");
+        AddProperty(10, "48, 4", QString::number(sqliteheader.pagecachesize), "SQLite Page Cache Size");
+        AddProperty(11, "52, 4", QString::number(sqliteheader.largestrootbtreepagenumber), "SQLite Largest Root B-Tree Page Number");
+        AddProperty(12, "56, 4", QString::number(sqliteheader.textencoding), "SQLite Text Encoding");
+        AddProperty(13, "60, 4", QString::number(sqliteheader.userversion), "SQLite User Version");
+        AddProperty(14, "64, 4", QString::number(sqliteheader.incrementalvacuummodebool), "SQLite Incremental Vacuum Mode Boolean");
+        AddProperty(15, "68, 4", QString::number(sqliteheader.appid), "SQLite App ID");
+        AddProperty(16, "92, 4", QString::number(sqliteheader.versionvalidfornum), "SQLite Version Valid for Number");
+        AddProperty(17, "96, 4", QString::number(sqliteheader.version), "SQLite Version");
     }
+    ui->propwidget->resizeColumnToContents(2);
 }
 
 void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage)
@@ -714,38 +657,24 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
         }
         rowcnt = ui->propwidget->rowCount();
     }
-    /*
-    quint8 type; // page type 0x02 - index interior (12) | 0x05 - table interior (12) | 0x0a - index leaf (8) | 0x0d - table leaf (8) [0,1]
-    quint16 firstfreeblock; // start of first free block on hte page or zero for no free blocks [1, 2]
-    quint16 cellcount; // number of cells on the page [3, 2]
-    quint16 cellcontentstart; // start of cell content area, zero represents 65536 [5, 2]
-    quint8 fragmentedfreebytescount; // number of fragmented free bytes within cell content area [7, 1]
-    quint32 rightmostpagenumber; // largest page number, right most pointer, interior page only [8, 4]
-     */ 
-    //quint8 pagetype = 0x00;
     pageheader.type = qFromBigEndian<quint8>(pagearray->mid(curpos, 1));
     pageheader.firstfreeblock = qFromBigEndian<quint16>(pagearray->mid(curpos + 1, 2));
     pageheader.cellcount = qFromBigEndian<quint16>(pagearray->mid(curpos + 3, 2));
     pageheader.cellcontentstart = qFromBigEndian<quint16>(pagearray->mid(curpos + 5, 2));
     pageheader.fragmentedfreebytescount = qFromBigEndian<quint8>(pagearray->mid(curpos + 7, 1));
     ui->propwidget->setRowCount(rowcnt + 5);
-    //hexcontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper();
-    ui->propwidget->setItem(rowcnt, 0, new QTableWidgetItem(QString::number(curpos) + ", 1"));
-    ui->propwidget->setItem(rowcnt, 1, new QTableWidgetItem("0x" + QString("%1").arg(pageheader.type, 2, 16, QChar('0')).toUpper()));
-    //ui->propwidget->setItem(rowcnt, 1, new QTableWidgetItem(QString::number(pageheader.type, 16)));
-    ui->propwidget->setItem(rowcnt, 2, new QTableWidgetItem("Page Type: 0x02 | 0x05 - Index | Table Interior, 0x0a | 0x0d - Index | Table Leaf, any other value is an error."));
+    AddProperty(rowcnt, QString::number(curpos) + ", 1", "0x" + QString("%1").arg(pageheader.type, 2, 16, QChar('0')).toUpper(), "Page Type: 0x02 | 0x05 - Index | Table Interior, 0x0a | 0x0d - Index | Table Leaf, any other value is an error.");
+    AddProperty(rowcnt + 1, QString::number(curpos + 1) + ", 2", QString::number(pageheader.firstfreeblock), "Start of the first free block on the page or zero for no free blocks.");
+    AddProperty(rowcnt + 2, QString::number(curpos + 3) + ", 2", QString::number(pageheader.cellcount), "Number of cells on the page.");
+    AddProperty(rowcnt + 3, QString::number(curpos + 5) + ", 2", QString::number(pageheader.cellcontentstart), "Start of the cell content area, zero represents 65536.");
+    AddProperty(rowcnt + 4, QString::number(curpos + 7) + ", 1", QString::number(pageheader.fragmentedfreebytescount), "Number of fragmented free bytes within cell content area.");
     if(pageheader.type == 0x02 || pageheader.type == 0x05)
     {
         pageheader.rightmostpagenumber = qFromBigEndian<quint32>(pagearray->mid(curpos + 8, 4));
         ui->propwidget->setRowCount(rowcnt + 6);
+        AddProperty(rowcnt + 5, QString::number(curpos + 8) + ", 4", QString::number(pageheader.rightmostpagenumber), "Largest page number, right most pointer.");
     }
-    //uint currow = ui->propwidget->rowCount() - 1;
-    //qDebug() << "current row:" << currow << "row count:" << ui->propwidget->rowCount();
-    /*
-        ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(walheader.fileversion)));
-        ui->propwidget->setItem(1, 2, new QTableWidgetItem("WAL File Version"));
-        ui->propwidget->setItem(2, 0, new QTableWidgetItem("8, 4"));
-    */
+    ui->propwidget->resizeColumnToContents(2);
 }
 
 /*

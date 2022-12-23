@@ -55,6 +55,7 @@ public:
     QPlainTextEdit *offsetedit;
     QPlainTextEdit *hexedit;
     QPlainTextEdit *utf8edit;
+    QSpacerItem *horizontalSpacer_2;
     QScrollBar *editscrollbar;
     QTableWidget *tablewidget;
     QTableWidget *propwidget;
@@ -162,10 +163,11 @@ public:
         horizontalLayout_2 = new QHBoxLayout(horizontalLayoutWidget);
         horizontalLayout_2->setSpacing(0);
         horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
+        horizontalLayout_2->setSizeConstraint(QLayout::SetDefaultConstraint);
         horizontalLayout_2->setContentsMargins(0, 0, 0, 0);
         offsetedit = new QPlainTextEdit(horizontalLayoutWidget);
         offsetedit->setObjectName(QString::fromUtf8("offsetedit"));
-        QSizePolicy sizePolicy2(QSizePolicy::Fixed, QSizePolicy::Expanding);
+        QSizePolicy sizePolicy2(QSizePolicy::Maximum, QSizePolicy::Expanding);
         sizePolicy2.setHorizontalStretch(0);
         sizePolicy2.setVerticalStretch(0);
         sizePolicy2.setHeightForWidth(offsetedit->sizePolicy().hasHeightForWidth());
@@ -185,8 +187,11 @@ public:
 
         hexedit = new QPlainTextEdit(horizontalLayoutWidget);
         hexedit->setObjectName(QString::fromUtf8("hexedit"));
-        sizePolicy2.setHeightForWidth(hexedit->sizePolicy().hasHeightForWidth());
-        hexedit->setSizePolicy(sizePolicy2);
+        QSizePolicy sizePolicy3(QSizePolicy::Fixed, QSizePolicy::Expanding);
+        sizePolicy3.setHorizontalStretch(0);
+        sizePolicy3.setVerticalStretch(0);
+        sizePolicy3.setHeightForWidth(hexedit->sizePolicy().hasHeightForWidth());
+        hexedit->setSizePolicy(sizePolicy3);
         hexedit->setMinimumSize(QSize(350, 0));
         hexedit->setMaximumSize(QSize(350, 16777215));
         hexedit->setBaseSize(QSize(0, 0));
@@ -201,8 +206,8 @@ public:
 
         utf8edit = new QPlainTextEdit(horizontalLayoutWidget);
         utf8edit->setObjectName(QString::fromUtf8("utf8edit"));
-        sizePolicy2.setHeightForWidth(utf8edit->sizePolicy().hasHeightForWidth());
-        utf8edit->setSizePolicy(sizePolicy2);
+        sizePolicy3.setHeightForWidth(utf8edit->sizePolicy().hasHeightForWidth());
+        utf8edit->setSizePolicy(sizePolicy3);
         utf8edit->setMinimumSize(QSize(150, 0));
         utf8edit->setMaximumSize(QSize(150, 16777215));
         utf8edit->setFont(font);
@@ -214,6 +219,10 @@ public:
         utf8edit->setTextInteractionFlags(Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse);
 
         horizontalLayout_2->addWidget(utf8edit);
+
+        horizontalSpacer_2 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_2->addItem(horizontalSpacer_2);
 
         editscrollbar = new QScrollBar(horizontalLayoutWidget);
         editscrollbar->setObjectName(QString::fromUtf8("editscrollbar"));
