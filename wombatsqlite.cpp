@@ -697,6 +697,7 @@ void WombatSqlite::PopulateHeader()
 void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage)
 {
     quint64 curpos = 0;
+    uint rowcnt = 0;
     if(curpage == 1) // get page header after the file header, so set new curpos here
     {
         if(filetype == 1) // WAL
@@ -711,6 +712,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
         {
             curpos = 100;
         }
+        rowcnt = ui->propwidget->rowCount();
     }
     /*
     quint8 type; // page type 0x02 - index interior (12) | 0x05 - table interior (12) | 0x0a - index leaf (8) | 0x0d - table leaf (8) [0,1]
@@ -726,24 +728,23 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
     pageheader.cellcount = qFromBigEndian<quint16>(pagearray->mid(curpos + 3, 2));
     pageheader.cellcontentstart = qFromBigEndian<quint16>(pagearray->mid(curpos + 5, 2));
     pageheader.fragmentedfreebytescount = qFromBigEndian<quint8>(pagearray->mid(curpos + 7, 1));
-    if(pageheader.type == 0x02 || pagehader.type == 0x05)
+    ui->propwidget->setRowCount(rowcnt + 5);
+    //hexcontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper();
+    ui->propwidget->setItem(rowcnt, 0, new QTableWidgetItem(QString::number(curpos) + ", 1"));
+    ui->propwidget->setItem(rowcnt, 1, new QTableWidgetItem("0x" + QString("%1").arg(pageheader.type, 2, 16, QChar('0')).toUpper()));
+    //ui->propwidget->setItem(rowcnt, 1, new QTableWidgetItem(QString::number(pageheader.type, 16)));
+    ui->propwidget->setItem(rowcnt, 2, new QTableWidgetItem("Page Type: 0x02 | 0x05 - Index | Table Interior, 0x0a | 0x0d - Index | Table Leaf, any other value is an error."));
+    if(pageheader.type == 0x02 || pageheader.type == 0x05)
+    {
         pageheader.rightmostpagenumber = qFromBigEndian<quint32>(pagearray->mid(curpos + 8, 4));
+        ui->propwidget->setRowCount(rowcnt + 6);
+    }
+    //uint currow = ui->propwidget->rowCount() - 1;
+    //qDebug() << "current row:" << currow << "row count:" << ui->propwidget->rowCount();
     /*
-    if(pagetype == 0x02) // INTERIOR INDEX PAGE (12 byte header)
-    {
-    }
-    else if(pagetype == 0x05) // INTERIOR TABLE PAGE (12 byte header)
-    {
-    }
-    else if(pagetype == 0x0a) // LEAF INDEX PAGE (8 byte header)
-    {
-    }
-    else if(pagetype == 0x0d) // LEAF TABLE PAGE (8 byte header)
-    {
-    }
-    else // not the right page header, need to process page differently
-    {
-    }
+        ui->propwidget->setItem(1, 1, new QTableWidgetItem(QString::number(walheader.fileversion)));
+        ui->propwidget->setItem(1, 2, new QTableWidgetItem("WAL File Version"));
+        ui->propwidget->setItem(2, 0, new QTableWidgetItem("8, 4"));
     */
 }
 
@@ -814,7 +815,7 @@ void WombatSqlite::LoadSqliteFile(void)
 
 void WombatSqlite::SelectText()
 {
-    if(ui->propwidget->currentRow() > -1)
+    if(ui->propwidget->currentRow() > -1 && ui->propwidget->currentItem() != NULL)
     {
         QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
         QTextCursor hexcursor = ui->hexedit->textCursor();
