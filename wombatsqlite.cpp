@@ -675,6 +675,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
         AddProperty(rowcnt + 5, QString::number(curpos + 8) + ", 4", QString::number(pageheader.rightmostpagenumber), "Largest page number, right most pointer.");
     }
     ui->propwidget->resizeColumnToContents(2);
+    // Parse Cell Pointers and rows here...
 }
 
 /*
