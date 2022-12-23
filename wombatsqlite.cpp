@@ -466,164 +466,10 @@ void WombatSqlite::FileSelected(QListWidgetItem* curitem)
     //qDebug() << "page size:" << curitem->data(257).toUInt();
     //qDebug() << "current page:" << curitem->data(258).toUInt();
     ui->pagespinbox->setValue(curpage);
+    ui->propwidget->setCurrentItem(NULL);
     LoadPage();
     // need to implement this to parse the records within the page...
     //LoadRecords();
-
-    /*
-    int itemindex = 0;
-    QTreeWidgetItem* curitem = ui->treewidget->selectedItems().first();
-    int rootindex = GetRootIndex(curitem);
-    hivefilepath = hives.at(rootindex);
-    bool toplevel = false;
-    QStringList pathitems;
-    pathitems.clear();
-    pathitems.append(curitem->text(itemindex));
-    QTreeWidgetItem* parent;
-    QTreeWidgetItem* child;
-    child = curitem;
-    while(toplevel == false)
-    {
-	parent = child->parent();
-	if(parent == nullptr)
-	    toplevel = true;
-	else
-	{
-	    pathitems.append(parent->text(itemindex));
-	    child = parent;
-	}
-    }
-    // build path
-    QString keypath = "";
-    QChar sepchar = QChar(92);
-    for(int i = pathitems.count() - 2; i > -1; i--)
-    {
-	keypath += "/" + pathitems.at(i);
-    }
-    keypath.replace("/", sepchar);
-    // attempt to open by path...
-    StatusUpdate(keypath);
-    libregf_file_t* regfile = NULL;
-    libregf_error_t* regerr = NULL;
-    libregf_file_initialize(&regfile, &regerr);
-    libregf_file_open(regfile, hivefilepath.toStdString().c_str(), LIBREGF_OPEN_READ, &regerr);
-    libregf_key_t* curkey = NULL;
-    libregf_file_get_key_by_utf8_path(regfile, (uint8_t*)(keypath.toUtf8().data()), keypath.toUtf8().size(), &curkey, &regerr);
-    // valid key, get values...
-    int valuecount = 0;
-    libregf_key_get_number_of_values(curkey, &valuecount, &regerr);
-    ui->tablewidget->clear();
-    ui->plaintext->setPlainText("");
-    ui->tablewidget->setRowCount(valuecount);
-    if(valuecount == 0) // no values, so create empty key
-    {
-	ui->tablewidget->setRowCount(1);
-        QString curtagvalue = keypath + "\\" + "(empty)";
-        ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Value Name", "Value"});
-        ui->tablewidget->setItem(0, 1, new QTableWidgetItem("(empty)"));
-        ui->tablewidget->setItem(0, 2, new QTableWidgetItem("0x00"));
-	QString tagstr = "";
-        for(int j=0; j < taggeditems.count(); j++)
-        {
-            if(taggeditems.at(j).contains(curtagvalue))
-                tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
-        }
-	ui->tablewidget->setItem(0, 0, new QTableWidgetItem(tagstr));
-        ui->tablewidget->resizeColumnToContents(0);
-        ui->tablewidget->setCurrentCell(0, 0);
-    }
-    for(int i=0; i < valuecount; i++)
-    {
-	libregf_value_t* curval = NULL;
-	libregf_key_get_value(curkey, i, &curval, &regerr);
-	size_t namesize = 0;
-	libregf_value_get_utf8_name_size(curval, &namesize, &regerr);
-	uint8_t name[namesize];
-	libregf_value_get_utf8_name(curval, name, namesize, &regerr);
-	uint32_t type = 0;
-	libregf_value_get_value_type(curval, &type, &regerr);
-        QString curtagvalue = keypath + "\\";
-	if(namesize == 0)
-	{
-	    curtagvalue += "(unnamed)";
-	    ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Value Name", "Value"});
-	    ui->tablewidget->setItem(i, 1, new QTableWidgetItem("(unnamed)"));
-	    ui->tablewidget->setItem(i, 2, new QTableWidgetItem(QString::number(type, 16)));
-	}
-	else
-	{
-	    curtagvalue += QString::fromUtf8(reinterpret_cast<char*>(name));
-            QString valuetypestr = "";
-	    ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Value Name", "Value Type"});
-	    ui->tablewidget->setItem(i, 1, new QTableWidgetItem(QString::fromUtf8(reinterpret_cast<char*>(name))));
-            if(type == 0x00) // none
-            {
-            }
-            else if(type == 0x01) // reg_sz
-            {
-                valuetypestr = "REG_SZ";
-            }
-            else if(type == 0x02) // reg_expand_sz
-            {
-                valuetypestr = "REG_EXPAND_SZ";
-            }
-            else if(type == 0x03) // reg_binary
-            {
-                valuetypestr = "REG_BINARY";
-            }
-            else if(type == 0x04) // reg_dword reg_dword_little_endian (4 bytes)
-            {
-                valuetypestr = "REG_DWORD";
-            }
-            else if(type == 0x05) // reg_dword_big_endian (4 bytes)
-            {
-                valuetypestr = "REG_DWORD_BIG_ENDIAN";
-            }
-            else if(type == 0x06) // reg_link
-            {
-                valuetypestr = "REG_LINK";
-            }
-            else if(type == 0x07) // reg_multi_sz
-            {
-                valuetypestr = "REG_MULTI_SZ";
-            }
-            else if(type == 0x08) // reg_resource_list
-            {
-                valuetypestr = "REG_RESOURCE_LIST";
-            }
-            else if(type == 0x09) // reg_full_resource_descriptor
-            {
-                valuetypestr = "REG_FULL_RESOURCE_DESCRIPTOR";
-            }
-            else if(type == 0x0a) // reg_resource_requirements_list
-            {
-                valuetypestr = "REG_RESOURCE_REQUIREMENTS_LIST";
-            }
-            else if(type == 0x0b) // reg_qword_little_endian (8 bytes)
-            {
-                valuetypestr = "REG_QWORD";
-            }
-            else
-            {
-            }
-	    ui->tablewidget->setItem(i, 2, new QTableWidgetItem(valuetypestr));
-	}
-	QString tagstr = "";
-        for(int j=0; j < taggeditems.count(); j++)
-        {
-            if(taggeditems.at(j).contains(curtagvalue))
-                tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
-        }
-	ui->tablewidget->setItem(i, 0, new QTableWidgetItem(tagstr));
-        ui->tablewidget->resizeColumnToContents(0);
-        ui->tablewidget->setCurrentCell(0, 0);
-	libregf_value_free(&curval, &regerr);
-    }
-    libregf_key_free(&curkey, &regerr);
-    libregf_file_close(regfile, &regerr);
-    libregf_file_free(&regfile, &regerr);
-    libregf_error_free(&regerr);
-    */
 }
 
 void WombatSqlite::LoadPage()
@@ -853,18 +699,36 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
     quint64 curpos = 0;
     if(curpage == 1) // get page header after the file header, so set new curpos here
     {
-        if(filetype == 1)
+        if(filetype == 1) // WAL
         {
+            curpos = 32;
         }
-        else if(filetype == 2)
+        else if(filetype == 2) // JOURNAL
         {
+            curpos = 28;
         }
-        else if(filetype == 3)
+        else if(filetype == 3) // SQLITE DB
         {
+            curpos = 100;
         }
     }
-    // start at zero since it's not the 1st page
-    // get the 1st byte to determine based on offset, either zero or the end of header based on file header
+    quint8 pagetype = 0x00;
+    pagetype = qFromBigEndian<quint8>(pagearray->mid(curpos, 1));
+    if(pagetype == 0x02) // INTERIOR INDEX PAGE (12 byte header)
+    {
+    }
+    else if(pagetype == 0x05) // INTERIOR TABLE PAGE (12 byte header)
+    {
+    }
+    else if(pagetype == 0x0a) // LEAF INDEX PAGE (8 byte header)
+    {
+    }
+    else if(pagetype == 0x0d) // LEAF TABLE PAGE (8 byte header)
+    {
+    }
+    else // not the right page header, need to process page differently
+    {
+    }
 }
 
 /*
@@ -934,52 +798,30 @@ void WombatSqlite::LoadSqliteFile(void)
 
 void WombatSqlite::SelectText()
 {
-    //uint hexlength = 16 * 3; // 48
-    //uint utf8length = 16;
-    QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
-    /*
-    uint startpos = 9;
-    uint linenumber = 1;
-    QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
-    qDebug() << "vallist:" << vallist.at(0).toUInt();
-    if(vallist.at(0).toUInt() > 15)
+    if(ui->propwidget->currentRow() > -1)
     {
-        linenumber = vallist.at(0).toUInt() / 15;
-        //if(vallist.at(0).toUInt() % 15 > 0)
-        //    linenumber++;
-        startpos = (9 + 32 + 16) * linenumber + vallist.at(0).toUInt() * 3 - 16 - 6;
-    }
-    else
-        startpos += vallist.at(0).toUInt() * 3;
-    qDebug() << "linenumber:" << linenumber;
-    uint endpos = startpos + vallist.at(1).toUInt() * 2 + vallist.at(1).toUInt() - 1;
-    QTextCursor c = ui->textedit->textCursor();
-    c.setPosition(startpos);
-    c.setPosition(endpos, QTextCursor::KeepAnchor);
-    ui->textedit->setTextCursor(c);
-    */
+        QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
+        QTextCursor hexcursor = ui->hexedit->textCursor();
+        hexcursor.setPosition(vallist.at(0).toUInt() * 3);
+        hexcursor.setPosition((vallist.at(0).toUInt() + vallist.at(1).toUInt()) * 3 - 1, QTextCursor::KeepAnchor);
+        ui->hexedit->setTextCursor(hexcursor);
+        QTextCursor utf8cursor = ui->utf8edit->textCursor();
+        //qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
+        if(vallist.at(0).toUInt() > 15)
+        {
+            uint linenumber = vallist.at(0).toUInt() / 16;
+            utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
+            utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+        }
+        else
+        {
+            utf8cursor.setPosition(vallist.at(0).toUInt());
+            utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+        }
+        ui->utf8edit->setTextCursor(utf8cursor);
 
-    QTextCursor hexcursor = ui->hexedit->textCursor();
-    hexcursor.setPosition(vallist.at(0).toUInt() * 3);
-    hexcursor.setPosition((vallist.at(0).toUInt() + vallist.at(1).toUInt()) * 3 - 1, QTextCursor::KeepAnchor);
-    ui->hexedit->setTextCursor(hexcursor);
-
-    QTextCursor utf8cursor = ui->utf8edit->textCursor();
-    //qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
-    if(vallist.at(0).toUInt() > 15)
-    {
-	uint linenumber = vallist.at(0).toUInt() / 16;
-	utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
-	utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+        OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
     }
-    else
-    {
-	utf8cursor.setPosition(vallist.at(0).toUInt());
-	utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
-    }
-    ui->utf8edit->setTextCursor(utf8cursor);
-
-    OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
 }
 
 /*
