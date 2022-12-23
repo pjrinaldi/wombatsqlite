@@ -712,8 +712,23 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
             curpos = 100;
         }
     }
-    quint8 pagetype = 0x00;
-    pagetype = qFromBigEndian<quint8>(pagearray->mid(curpos, 1));
+    /*
+    quint8 type; // page type 0x02 - index interior (12) | 0x05 - table interior (12) | 0x0a - index leaf (8) | 0x0d - table leaf (8) [0,1]
+    quint16 firstfreeblock; // start of first free block on hte page or zero for no free blocks [1, 2]
+    quint16 cellcount; // number of cells on the page [3, 2]
+    quint16 cellcontentstart; // start of cell content area, zero represents 65536 [5, 2]
+    quint8 fragmentedfreebytescount; // number of fragmented free bytes within cell content area [7, 1]
+    quint32 rightmostpagenumber; // largest page number, right most pointer, interior page only [8, 4]
+     */ 
+    //quint8 pagetype = 0x00;
+    pageheader.type = qFromBigEndian<quint8>(pagearray->mid(curpos, 1));
+    pageheader.firstfreeblock = qFromBigEndian<quint16>(pagearray->mid(curpos + 1, 2));
+    pageheader.cellcount = qFromBigEndian<quint16>(pagearray->mid(curpos + 3, 2));
+    pageheader.cellcontentstart = qFromBigEndian<quint16>(pagearray->mid(curpos + 5, 2));
+    pageheader.fragmentedfreebytescount = qFromBigEndian<quint8>(pagearray->mid(curpos + 7, 1));
+    if(pageheader.type == 0x02 || pagehader.type == 0x05)
+        pageheader.rightmostpagenumber = qFromBigEndian<quint32>(pagearray->mid(curpos + 8, 4));
+    /*
     if(pagetype == 0x02) // INTERIOR INDEX PAGE (12 byte header)
     {
     }
@@ -729,6 +744,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
     else // not the right page header, need to process page differently
     {
     }
+    */
 }
 
 /*

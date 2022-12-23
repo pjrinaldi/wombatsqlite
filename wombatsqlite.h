@@ -70,6 +70,16 @@ struct SqliteHeader
     quint32 version; // 96, 4
 };
 
+struct PageHeader
+{
+    quint8 type; // page type 0x02 - index interior (12) | 0x05 - table interior (12) | 0x0a - index leaf (8) | 0x0d - table leaf (8) [0,1]
+    quint16 firstfreeblock; // start of first free block on hte page or zero for no free blocks [1, 2]
+    quint16 cellcount; // number of cells on the page [3, 2]
+    quint16 cellcontentstart; // start of cell content area, zero represents 65536 [5, 2]
+    quint8 fragmentedfreebytescount; // number of fragmented free bytes within cell content area [7, 1]
+    quint32 rightmostpagenumber; // largest page number, right most pointer, interior page only [8, 4]
+};
+
 namespace Ui
 {
     class WombatSqlite;
@@ -152,6 +162,7 @@ private:
     JournalHeader journalheader;
     WalHeader walheader;
     SqliteHeader sqliteheader;
+    PageHeader pageheader;
 };
 
 #endif // WOMBATSQLITE_H
