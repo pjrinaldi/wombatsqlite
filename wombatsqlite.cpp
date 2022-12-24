@@ -640,6 +640,7 @@ void WombatSqlite::PopulateHeader()
 void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage)
 {
     quint64 curpos = 0;
+    quint64 cellarrayoff = 0;
     uint rowcnt = 0;
     if(curpage == 1) // get page header after the file header, so set new curpos here
     {
@@ -668,14 +669,35 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
     AddProperty(rowcnt + 2, QString::number(curpos + 3) + ", 2", QString::number(pageheader.cellcount), "Number of cells on the page.");
     AddProperty(rowcnt + 3, QString::number(curpos + 5) + ", 2", QString::number(pageheader.cellcontentstart), "Start of the cell content area, zero represents 65536.");
     AddProperty(rowcnt + 4, QString::number(curpos + 7) + ", 1", QString::number(pageheader.fragmentedfreebytescount), "Number of fragmented free bytes within cell content area.");
+    cellarrayoff = curpos + 8;
     if(pageheader.type == 0x02 || pageheader.type == 0x05)
     {
         pageheader.rightmostpagenumber = qFromBigEndian<quint32>(pagearray->mid(curpos + 8, 4));
         ui->propwidget->setRowCount(rowcnt + 6);
         AddProperty(rowcnt + 5, QString::number(curpos + 8) + ", 4", QString::number(pageheader.rightmostpagenumber), "Largest page number, right most pointer.");
+        cellarrayoff = curpos + 12;
     }
     ui->propwidget->resizeColumnToContents(2);
+    //qDebug() << "cell pointer array offset:" << cellarrayoff;
     // Parse Cell Pointers and rows here...
+    rowcnt = ui->propwidget->rowCount();
+    QList<quint16> celloffarray;
+    celloffarray.clear();
+    if(pageheader.cellcount > 0)
+    {
+        ui->propwidget->setRowCount(rowcnt + pageheader.cellcount);
+        for(int i=0; i < pageheader.cellcount; i++)
+        {
+            celloffarray.append(qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2)));
+            AddProperty(rowcnt + i, QString::number(cellarrayoff + 2*i) + ", 2", QString::number(qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2))), "Cell Array Offset " + QString::number(i+1) + ".");
+            qDebug() << "cell array " + QString::number(i) + " offset:" << qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2));
+        }
+    }
+    else // root page of a table with no rows
+    {
+        qDebug() << "cell content area offset is equal to pagesize - reserved space bytes.";
+    }
+    qDebug() << "cell offset array count: " << celloffarray.count() << celloffarray;
 }
 
 /*
