@@ -19,7 +19,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
     connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
     connect(ui->editscrollbar, SIGNAL(valueChanged(int)), this, SLOT(ScrollHex(int)), Qt::DirectConnection);
-    connect(ui->hexedit, SIGNAL(selectionChanged()), this, SLOT(SelectionChanged()), Qt::DirectConnection);
+    //connect(ui->hexedit, SIGNAL(selectionChanged()), this, SLOT(SelectionChanged()), Qt::DirectConnection);
     ui->offsetedit->setVerticalScrollBar(ui->editscrollbar);
     ui->hexedit->setVerticalScrollBar(ui->editscrollbar);
     ui->utf8edit->setVerticalScrollBar(ui->editscrollbar);
@@ -708,6 +708,18 @@ void WombatSqlite::closeEvent(QCloseEvent* e)
 }
 */
 
+/*
+void WombatSqlite::mouseDoubleClickEvent(QMouseEvent* event)
+{
+    if(event)
+    {
+        ui->utf8edit->textCursor().clearSelection();
+        ui->propwidget->setCurrentItem(NULL);
+        OffsetUpdate(QString::number(ui->hexedit->textCursor().selectionStart() / 3, 16));
+    }
+}
+*/
+
 void WombatSqlite::LoadSqliteFile(void)
 {
     filetype = 0;
@@ -796,10 +808,12 @@ void WombatSqlite::SelectText()
 
 void WombatSqlite::SelectionChanged()
 {
+    // might be able to do an if propwidget-currentitem current vallist != selectionstart then do the below
     ui->utf8edit->textCursor().clearSelection();
     ui->propwidget->setCurrentItem(NULL);
     OffsetUpdate(QString::number(ui->hexedit->textCursor().selectionStart() / 3, 16));
 }
+
 /*
 void WombatSqlite::PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* regerr)
 {

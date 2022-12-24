@@ -24,6 +24,32 @@
 #define EPOCH_DIFFERENCE 11644473600LL
 #define NSEC_BTWN_1904_1970	(uint32_t) 2082844800U
 
+/*
+class HexEdit : public QPlainTextEdit
+{
+    Q_OBJECT
+
+    public:
+
+    protected:
+        void mouseDoubleClickEvent(QMouseEvent* e)
+        {
+            if(e)
+            {
+                qDebug() << "figure out how to implement this and the problem will be solved, or pick another signal.";
+                UpdateOffsetLabel(QString::number(this->textCursor().selectionStart() / 3, 16));
+                //ui->utf8edit->textCursor().clearSelection();
+                //ui->propwidget->setCurrentItem(NULL);
+                //OffsetUpdate(QString::number(ui->hexedit->textCursor().selectionStart() / 3, 16));
+            }
+        };
+
+    signals:
+        void UpdateOffsetLabel(QString tmptext);
+        //void LaunchFile(const QModelIndex &index);
+};
+*/
+
 struct WalHeader
 {
         quint32 header; // = qFromBigEndian<quint32>(pageheader->mid(0, 4));
@@ -124,6 +150,7 @@ private slots:
 
 protected:
     //void closeEvent(QCloseEvent* event);
+    void mouseDoubleClickEvent(QMouseEvent* event);
 
 private:
     Ui::WombatSqlite* ui;
