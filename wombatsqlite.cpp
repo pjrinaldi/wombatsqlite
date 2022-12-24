@@ -19,6 +19,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
     connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
     connect(ui->editscrollbar, SIGNAL(valueChanged(int)), this, SLOT(ScrollHex(int)), Qt::DirectConnection);
+    connect(ui->hexedit, SIGNAL(selectionChanged()), this, SLOT(SelectionChanged()), Qt::DirectConnection);
     ui->offsetedit->setVerticalScrollBar(ui->editscrollbar);
     ui->hexedit->setVerticalScrollBar(ui->editscrollbar);
     ui->utf8edit->setVerticalScrollBar(ui->editscrollbar);
@@ -690,14 +691,14 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
         {
             celloffarray.append(qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2)));
             AddProperty(rowcnt + i, QString::number(cellarrayoff + 2*i) + ", 2", QString::number(qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2))), "Cell Array Offset " + QString::number(i+1) + ".");
-            qDebug() << "cell array " + QString::number(i) + " offset:" << qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2));
+            //qDebug() << "cell array " + QString::number(i) + " offset:" << qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2));
         }
     }
     else // root page of a table with no rows
     {
         qDebug() << "cell content area offset is equal to pagesize - reserved space bytes.";
     }
-    qDebug() << "cell offset array count: " << celloffarray.count() << celloffarray;
+    //qDebug() << "cell offset array count: " << celloffarray.count() << celloffarray;
 }
 
 /*
@@ -793,6 +794,12 @@ void WombatSqlite::SelectText()
     }
 }
 
+void WombatSqlite::SelectionChanged()
+{
+    ui->utf8edit->textCursor().clearSelection();
+    ui->propwidget->setCurrentItem(NULL);
+    OffsetUpdate(QString::number(ui->hexedit->textCursor().selectionStart() / 3, 16));
+}
 /*
 void WombatSqlite::PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* regerr)
 {
