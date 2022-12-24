@@ -150,7 +150,7 @@ private slots:
 
 protected:
     //void closeEvent(QCloseEvent* event);
-    void mouseDoubleClickEvent(QMouseEvent* event);
+    //void mouseDoubleClickEvent(QMouseEvent* event);
 
 private:
     Ui::WombatSqlite* ui;
@@ -169,6 +169,7 @@ private:
     void ParseHeader(QByteArray* pageheader);
     void PopulateHeader(void);
     void ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage);
+    uint GetVarInt(QByteArray* pagearray, quint64 pageoffset);
     // change ParsePageHeader to ParsePage
     //void PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* curerr);
     QString DecryptRot13(QString encstr);

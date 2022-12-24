@@ -19,7 +19,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
     connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
     connect(ui->editscrollbar, SIGNAL(valueChanged(int)), this, SLOT(ScrollHex(int)), Qt::DirectConnection);
-    //connect(ui->hexedit, SIGNAL(selectionChanged()), this, SLOT(SelectionChanged()), Qt::DirectConnection);
+    connect(ui->hexedit, SIGNAL(selectionChanged()), this, SLOT(SelectionChanged()), Qt::DirectConnection);
     ui->offsetedit->setVerticalScrollBar(ui->editscrollbar);
     ui->hexedit->setVerticalScrollBar(ui->editscrollbar);
     ui->utf8edit->setVerticalScrollBar(ui->editscrollbar);
@@ -693,12 +693,74 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
             AddProperty(rowcnt + i, QString::number(cellarrayoff + 2*i) + ", 2", QString::number(qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2))), "Cell Array Offset " + QString::number(i+1) + ".");
             //qDebug() << "cell array " + QString::number(i) + " offset:" << qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2));
         }
+        for(int i=0; i < celloffarray.count(); i++)
+        {
+            qDebug() << "cell off array " + QString::number(i+1) + ":" << celloffarray.at(i);
+            if(pageheader.type == 0x02) // index interior
+            {
+                quint32 pagenum = qFromBigEndian<quint32>(pagearray->mid(celloffarray.at(i), 4));
+                qDebug() << "pagenum:" << pagenum;
+            }
+            else if(pageheader.type == 0x05) // table interior
+            {
+                quint32 pagenum = qFromBigEndian<quint32>(pagearray->mid(celloffarray.at(i), 4));
+                qDebug() << "pagenum:" << pagenum;
+            }
+            else if(pageheader.type == 0x0a) // index leaf
+            {
+            }
+            else if(pageheader.type == 0x0d) // table leaf
+            {
+                uint payloadsize = GetVarInt(pagearray, celloffarray.at(i));
+            }
+        }
     }
     else // root page of a table with no rows
     {
         qDebug() << "cell content area offset is equal to pagesize - reserved space bytes.";
     }
     //qDebug() << "cell offset array count: " << celloffarray.count() << celloffarray;
+}
+
+uint WombatSqlite::GetVarInt(QByteArray* pagearray, quint64 pageoffset)
+{
+    bool getnextbyte = true;
+    QByteArray varbytes;
+    varbytes.clear();
+    uint length = 1;
+    while(getnextbyte == true)
+    {
+        quint8 curbyte = qFromBigEndian<quint8>(pagearray->mid(pageoffset + length - 1, 1));
+        if(curbyte >= 0x80)
+        {
+            varbytes.append(pagearray->mid(pageoffset + length - 1, 1));
+            length++;
+        }
+        else
+        {
+            varbytes.append(pagearray->mid(pageoffset + length - 1, 1));
+            getnextbyte = false;
+        }
+    }
+    qDebug() << "pageoffset:" << pageoffset << "length:" << length;
+    qDebug() << "varbytes:" << varbytes.toHex();
+    if(length > 1)
+    {
+        // need to do the varbyte edit thing...
+    }
+    else
+    {
+        qDebug() << "varint:" << qFromBigEndian<quint8>(varbytes);
+    }
+    /*
+    quint64 payloadsize = 0;
+    if(length - 1 == 1)
+        payloadsize = qFromBigEndian<quint8>(pagearray->mid(pageoffset, pageoffset + length - 1));
+    else if(length - 1 == 2)
+        payloadsize = qFromBigEndian<quint16>(pagearray->mid(pageoffset, pageoffset + length - 1));
+    */
+
+    //qDebug() << "bytes:" << QString::number(qFromBigEndian<uint>(pagearray->mid(pageoffset, pageoffset + length - 1)), 16);
 }
 
 /*
@@ -808,9 +870,22 @@ void WombatSqlite::SelectText()
 
 void WombatSqlite::SelectionChanged()
 {
+    /*
+    if(ui->propwidget->currentRow() > 0)
+    {
+    uint curval = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(". ").at(0).toUInt();
+    uint selval = ui->hexedit->textCursor().selectionStart() / 3;
+    if(curval != selval)
+    {
+    qDebug() << "propwidget currentitem:" << ui->propwidget->currentRow();
+    qDebug() << "vallist.at(0):" << ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ").at(0).toUInt();
+    qDebug() << "selectionstart:" << ui->hexedit->textCursor().selectionStart() / 3;
     // might be able to do an if propwidget-currentitem current vallist != selectionstart then do the below
-    ui->utf8edit->textCursor().clearSelection();
     ui->propwidget->setCurrentItem(NULL);
+    }
+    }
+    */
+    //ui->utf8edit->textCursor().clearSelection();
     OffsetUpdate(QString::number(ui->hexedit->textCursor().selectionStart() / 3, 16));
 }
 
