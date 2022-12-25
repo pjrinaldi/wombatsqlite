@@ -149,6 +149,10 @@ private slots:
     {
         hexlabel->setText("Hex Offset: 0x" + tmptext);
     };
+    void LengthUpdate(QString tmptext)
+    {
+        lengthlabel->setText("Selection Length: " + tmptext);
+    };
 
 protected:
     //void closeEvent(QCloseEvent* event);
@@ -158,6 +162,7 @@ private:
     Ui::WombatSqlite* ui;
     QLabel* statuslabel;
     QLabel* hexlabel;
+    QLabel* lengthlabel;
     QString dbpath;
     QString olddbpath;
     QString curfilepath = "";

@@ -12,6 +12,8 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     StatusUpdate("Open a SQLite DB,WAL, or journal to Begin");
     hexlabel = new QLabel(this);
     this->statusBar()->addWidget(hexlabel, 0);
+    lengthlabel = new QLabel(this);
+    this->statusBar()->addWidget(lengthlabel, 0);
     connect(ui->actionOpenDB, SIGNAL(triggered()), this, SLOT(OpenDB()), Qt::DirectConnection);
     ui->tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Is Live", "Type"});
@@ -877,6 +879,7 @@ void WombatSqlite::SelectText()
         ui->utf8edit->setTextCursor(utf8cursor);
 
         OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
+        LengthUpdate(vallist.at(1));
     }
 }
 
@@ -899,6 +902,28 @@ void WombatSqlite::SelectionChanged()
     */
     //ui->utf8edit->textCursor().clearSelection();
     OffsetUpdate(QString::number(ui->hexedit->textCursor().selectionStart() / 3, 16));
+    uint diff = (ui->hexedit->textCursor().selectionEnd() - ui->hexedit->textCursor().selectionStart()) / 3;
+    uint rem = (ui->hexedit->textCursor().selectionEnd() - ui->hexedit->textCursor().selectionStart()) % 3;
+    if(rem != 0)
+        diff++;
+    LengthUpdate(QString::number(diff));
+
+    ui->utf8edit->textCursor().clearSelection();
+    QTextCursor utf8cursor = ui->utf8edit->textCursor();
+    if(ui->hexedit->textCursor().selectionStart() / 3 > 15)
+    {
+        uint linenumber = (ui->hexedit->textCursor().selectionStart() / 3) / 16;
+        utf8cursor.setPosition((ui->hexedit->textCursor().selectionStart() / 3) + linenumber);
+        utf8cursor.setPosition((ui->hexedit->textCursor().selectionStart() / 3) + linenumber + diff, QTextCursor::KeepAnchor);
+    }
+    else
+    {
+        utf8cursor.setPosition(ui->hexedit->textCursor().selectionStart() / 3);
+        utf8cursor.setPosition(ui->hexedit->textCursor().selectionStart() / 3 + diff, QTextCursor::KeepAnchor);
+        //utf8cursor.setPosition(vallist.at(0).toUInt());
+        //utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+    }
+    ui->utf8edit->setTextCursor(utf8cursor);
 }
 
 /*
