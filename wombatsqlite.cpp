@@ -885,22 +885,6 @@ void WombatSqlite::SelectText()
 
 void WombatSqlite::SelectionChanged()
 {
-    /*
-    if(ui->propwidget->currentRow() > 0)
-    {
-    uint curval = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(". ").at(0).toUInt();
-    uint selval = ui->hexedit->textCursor().selectionStart() / 3;
-    if(curval != selval)
-    {
-    qDebug() << "propwidget currentitem:" << ui->propwidget->currentRow();
-    qDebug() << "vallist.at(0):" << ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ").at(0).toUInt();
-    qDebug() << "selectionstart:" << ui->hexedit->textCursor().selectionStart() / 3;
-    // might be able to do an if propwidget-currentitem current vallist != selectionstart then do the below
-    ui->propwidget->setCurrentItem(NULL);
-    }
-    }
-    */
-    //ui->utf8edit->textCursor().clearSelection();
     OffsetUpdate(QString::number(ui->hexedit->textCursor().selectionStart() / 3, 16));
     uint diff = (ui->hexedit->textCursor().selectionEnd() - ui->hexedit->textCursor().selectionStart()) / 3;
     uint rem = (ui->hexedit->textCursor().selectionEnd() - ui->hexedit->textCursor().selectionStart()) % 3;
@@ -920,8 +904,6 @@ void WombatSqlite::SelectionChanged()
     {
         utf8cursor.setPosition(ui->hexedit->textCursor().selectionStart() / 3);
         utf8cursor.setPosition(ui->hexedit->textCursor().selectionStart() / 3 + diff, QTextCursor::KeepAnchor);
-        //utf8cursor.setPosition(vallist.at(0).toUInt());
-        //utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
     }
     ui->utf8edit->setTextCursor(utf8cursor);
 }
