@@ -711,7 +711,12 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
             }
             else if(pageheader.type == 0x0d) // table leaf
             {
-                uint payloadsize = GetVarInt(pagearray, celloffarray.at(i));
+                uint payloadlength = GetVarIntLength(pagearray, celloffarray.at(i));
+                uint payloadsize = GetVarInt(pagearray, celloffarray.at(i), payloadlength);
+                qDebug() << "payload length:" << payloadlength << "payload size:" << payloadsize;
+                uint rowidlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength);
+                uint rowid = GetVarInt(pagearray, celloffarray.at(i) + payloadlength, rowidlength);
+                qDebug() << "rowid length:" << rowidlength << "row id:" << rowid;
             }
         }
     }
@@ -722,72 +727,49 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
     //qDebug() << "cell offset array count: " << celloffarray.count() << celloffarray;
 }
 
-uint WombatSqlite::GetVarInt(QByteArray* pagearray, quint64 pageoffset)
+uint WombatSqlite::GetVarIntLength(QByteArray* pagearray, quint64 pageoffset)
 {
     bool getnextbyte = true;
-    QByteArray varbytes;
-    varbytes.clear();
     uint length = 1;
     while(getnextbyte == true)
     {
         quint8 curbyte = qFromBigEndian<quint8>(pagearray->mid(pageoffset + length - 1, 1));
         if(curbyte >= 0x80)
-        {
-            varbytes.append(pagearray->mid(pageoffset + length - 1, 1));
             length++;
-        }
         else
-        {
-            varbytes.append(pagearray->mid(pageoffset + length - 1, 1));
             getnextbyte = false;
-        }
     }
-    qDebug() << "pageoffset:" << pageoffset << "length:" << length;
-    qDebug() << "varbytes:" << varbytes.toHex();
-    if(length > 1)
+    return length;
+}
+
+uint WombatSqlite::GetVarInt(QByteArray* pagearray, quint64 pageoffset, uint varintlength)
+{
+    QByteArray varbytes;
+    varbytes.clear();
+    for(int i=0; i < varintlength; i++)
+        varbytes.append(pagearray->mid(pageoffset + i, 1));
+    //qDebug() << "pageoffset:" << pageoffset << "length:" << varintlength;
+    //qDebug() << "varbytes:" << varbytes.toHex() << "varbytes count:" << varbytes.count();
+    if(varintlength > 1)
     {
-        qDebug() << "byte 1:" << QString("%1").arg(((quint8)varbytes.at(0)), 8, 2, QChar('0'));
-        qDebug() << "byte 2:" << QString("%1").arg(((quint8)varbytes.at(1)), 8, 2, QChar('0'));
-        std::bitset<8> byte1(((quint8)varbytes.at(0)));
-        std::bitset<8> byte2(((quint8)varbytes.at(1)));
-        std::bitset<6> newbyte1;
-        std::bitset<8> newbyte2;
-        newbyte2.set(7, byte1[0]);
-        for(int i=1; i < 7; i++)
+        uint i;
+        quint64 x;
+        quint64 uX = 0;
+        for(i=0; i < varintlength && i < 9; i++)
         {
-            newbyte1.set(i-1, byte1[i]);
-            newbyte2.set(i, byte2[i]);
+            x = (quint8)varbytes.at(i);
+            uX = (uX<<7) + (x&0x7f);
+            if((x&0x80)==0)
+                break;
         }
-        newbyte2.set(0, byte2[7]);
-        qDebug() << "byte1:" << QString::number(((quint8)varbytes.at(0)));
-        qDebug() << "newbyte1:" << newbyte1.to_ulong();
-        qDebug() << "new byte 1:" << QString("%1").arg(newbyte1.to_ulong(), 8, 2, QChar('0'));
-        qDebug() << "new byte 2:" << QString("%1").arg(((quint8)newbyte2.to_ulong()), 8, 2, QChar('0'));
-        qDebug() << "byte2:" << QString::number(((quint8)varbytes.at(1)));
-        qDebug() << "newbyte2:" << newbyte2.to_ulong();
-        std::bitset<16> newbyte3;
-        for(int i=0; i < 8; i++)
-        {
-            newbyte3.set(i + 8, newbyte1[i]);
-            newbyte3.set(i, newbyte2[i]);
-        }
-        qDebug() << "new byte 3:" << QString::number(((quint16)newbyte3.to_ulong()), 16);
-        qDebug() << "newbyte3:" << newbyte3.to_ulong();
-        // need to do the varbyte edit thing...
+        if(i == 9 && i < varintlength)
+            uX = (uX<<8) + x;
+        i++;
+        //qDebug() << "varint:" << uX;
+        return uX;
     }
     else
-    {
-        qDebug() << "varint:" << qFromBigEndian<quint8>(varbytes);
-    }
-    /*
-    quint64 payloadsize = 0;
-    if(length - 1 == 1)
-        payloadsize = qFromBigEndian<quint8>(pagearray->mid(pageoffset, pageoffset + length - 1));
-    else if(length - 1 == 2)
-        payloadsize = qFromBigEndian<quint16>(pagearray->mid(pageoffset, pageoffset + length - 1));
-    */
-
-    //qDebug() << "bytes:" << QString::number(qFromBigEndian<uint>(pagearray->mid(pageoffset, pageoffset + length - 1)), 16);
+        return qFromBigEndian<quint8>(varbytes);
 }
 
 /*
