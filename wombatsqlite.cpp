@@ -746,6 +746,25 @@ uint WombatSqlite::GetVarInt(QByteArray* pagearray, quint64 pageoffset)
     qDebug() << "varbytes:" << varbytes.toHex();
     if(length > 1)
     {
+        qDebug() << "byte 1:" << QString("%1").arg(((quint8)varbytes.at(0)), 8, 2, QChar('0'));
+        qDebug() << "byte 2:" << QString("%1").arg(((quint8)varbytes.at(1)), 8, 2, QChar('0'));
+        std::bitset<8> byte1(((quint8)varbytes.at(0)));
+        std::bitset<8> byte2(((quint8)varbytes.at(1)));
+        std::bitset<6> newbyte1;
+        std::bitset<8> newbyte2;
+        newbyte2.set(7, byte1[0]);
+        for(int i=1; i < 7; i++)
+        {
+            newbyte1.set(i-1, byte1[i]);
+            newbyte2.set(i, byte2[i]);
+        }
+        newbyte2.set(0, byte2[7]);
+        qDebug() << "byte1:" << QString::number(((quint8)varbytes.at(0)));
+        qDebug() << "newbyte1:" << newbyte1.to_ulong();
+        qDebug() << "new byte 1:" << QString("%1").arg(newbyte1.to_ulong(), 8, 2, QChar('0'));
+        qDebug() << "new byte 2:" << QString("%1").arg(((quint8)newbyte2.to_ulong()), 8, 2, QChar('0'));
+        qDebug() << "byte2:" << QString::number(((quint8)varbytes.at(1)));
+        qDebug() << "newbyte2:" << newbyte2.to_ulong();
         // need to do the varbyte edit thing...
     }
     else

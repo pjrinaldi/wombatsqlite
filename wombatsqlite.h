@@ -12,6 +12,8 @@
 #include <QTimeZone>
 #include <QDirIterator>
 #include "ui_wombatsqlite.h"
+
+#include <bitset>
 /*
 #include "tagmanager.h"
 #include "htmlviewer.h"
