@@ -717,6 +717,9 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                 uint rowidlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength);
                 uint rowid = GetVarInt(pagearray, celloffarray.at(i) + payloadlength, rowidlength);
                 qDebug() << "rowid length:" << rowidlength << "row id:" << rowid;
+                uint recordlengthlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength + rowidlength);
+                uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength + rowidlength, recordlengthlength);
+                qDebug() << "record length length:" << recordlengthlength << "record length:" << recordlength;
             }
         }
     }
