@@ -178,6 +178,7 @@ private:
     void ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage);
     uint GetVarIntLength(QByteArray* pagearray, quint64 pageoffset);
     uint GetVarInt(QByteArray* pagearray, quint64 pageoffset, uint varintlength);
+    uint GetSerialType(uint serialtype);
     // change ParsePageHeader to ParsePage
     //void PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* curerr);
     QString DecryptRot13(QString encstr);

@@ -722,6 +722,21 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                 uint recordlengthlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength + rowidlength);
                 uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength + rowidlength, recordlengthlength);
                 qDebug() << "record length length:" << recordlengthlength << "record length:" << recordlength;
+                // so i need to get the number of bytes after recordlength byte... these are the serial types...
+                QList<int> serialtypes;
+                serialtypes.clear();
+                QByteArray serialarray = pagearray->mid(celloffarray.at(i) + payloadlength + rowidlength + recordlengthlength, recordlength - recordlengthlength);
+                qDebug() << "Serial Array:" << serialarray.toHex();
+                uint curserialtypelength = 0;
+                while(curserialtypelength < serialarray.count())
+                {
+                    uint curstlen = GetVarIntLength(&serialarray, curserialtypelength);
+                    uint curst = GetVarInt(&serialarray, curserialtypelength, curstlen);
+                    curserialtypelength += curstlen;
+                    serialtypes.append(GetSerialType(curst));
+                    //qDebug() << "curstlen:" << curstlen << "curst:" << curst << "curserialtypelength:" << curserialtypelength;
+                }
+                qDebug() << "serialtypes:" << serialtypes;
             }
         }
     }
@@ -751,7 +766,7 @@ uint WombatSqlite::GetVarInt(QByteArray* pagearray, quint64 pageoffset, uint var
 {
     QByteArray varbytes;
     varbytes.clear();
-    for(int i=0; i < varintlength; i++)
+    for(uint i=0; i < varintlength; i++)
         varbytes.append(pagearray->mid(pageoffset + i, 1));
     //qDebug() << "pageoffset:" << pageoffset << "length:" << varintlength;
     //qDebug() << "varbytes:" << varbytes.toHex() << "varbytes count:" << varbytes.count();
@@ -775,6 +790,23 @@ uint WombatSqlite::GetVarInt(QByteArray* pagearray, quint64 pageoffset, uint var
     }
     else
         return qFromBigEndian<quint8>(varbytes);
+}
+
+uint WombatSqlite::GetSerialType(uint serialtype)
+{
+    // 0 = NULL (0)
+    // 1 = quint8 (1)
+    // 2 = quint16 (2)
+    // 3 = quint24 (3)
+    // 4 = quint32 (4)
+    // 5 = quint48 (6)
+    // 6 = quint64 (8)
+    // 7 = double (8)
+    // 8 = 0 (0)
+    // 9 = 1 (0)
+    // 10, 11 = reserved
+    // N >= 12 (EVEN) TEXT/BLOB (N - 12) / 2 for size
+    // N >= 13 (ODD) TEXT/BLOB (N - 13) / 2 for size
 }
 
 /*
