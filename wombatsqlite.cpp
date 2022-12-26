@@ -16,7 +16,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     this->statusBar()->addWidget(lengthlabel, 0);
     connect(ui->actionOpenDB, SIGNAL(triggered()), this, SLOT(OpenDB()), Qt::DirectConnection);
     ui->tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Is Live", "Type"});
+    ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Is Live", "Offset,Length", "Type", "Value"});
     connect(ui->treewidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(FileSelected(QListWidgetItem*)), Qt::DirectConnection);
     connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
     connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
@@ -583,6 +583,15 @@ void WombatSqlite::ParseHeader(QByteArray* pageheader)
     }
 }
 
+void WombatSqlite::AddContent(int row, QString islive, QString offlen, QString type, QString val)
+{
+    ui->tablewidget->setItem(row, 0, new QTableWidgetItem(""));
+    ui->tablewidget->setItem(row, 1, new QTableWidgetItem(islive));
+    ui->tablewidget->setItem(row, 2, new QTableWidgetItem(offlen));
+    ui->tablewidget->setItem(row, 3, new QTableWidgetItem(type));
+    ui->tablewidget->setItem(row, 4, new QTableWidgetItem(val));
+}
+
 void WombatSqlite::AddProperty(int row, QString offlen, QString val, QString desc)
 {
     ui->propwidget->setItem(row, 0, new QTableWidgetItem(offlen));
@@ -689,6 +698,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
     if(pageheader.cellcount > 0)
     {
         ui->propwidget->setRowCount(rowcnt + pageheader.cellcount);
+        ui->tablewidget->setRowCount(pageheader.cellcount);
         for(int i=0; i < pageheader.cellcount; i++)
         {
             celloffarray.append(qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2)));
@@ -723,6 +733,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                 uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength + rowidlength, recordlengthlength);
                 qDebug() << "record length length:" << recordlengthlength << "record length:" << recordlength;
                 // so i need to get the number of bytes after recordlength byte... these are the serial types...
+                quint64 contentoffset = celloffarray.at(i) + payloadlength + rowidlength + recordlength;
                 QList<int> serialtypes;
                 serialtypes.clear();
                 QByteArray serialarray = pagearray->mid(celloffarray.at(i) + payloadlength + rowidlength + recordlengthlength, recordlength - recordlengthlength);
@@ -730,13 +741,114 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                 uint curserialtypelength = 0;
                 while(curserialtypelength < serialarray.count())
                 {
+                    QString tmpofflen = "";
+                    QString tmptype = "";
+                    QString tmpval = "";
                     uint curstlen = GetVarIntLength(&serialarray, curserialtypelength);
                     uint curst = GetVarInt(&serialarray, curserialtypelength, curstlen);
                     curserialtypelength += curstlen;
-                    serialtypes.append(GetSerialType(curst));
+                    // attempt to spit out content for serial type here... 
+                    qDebug() << "current serial type:" << curst;
+                    if(curst == 0) // col length is zero, so content length doesn't change
+                    {
+                        tmptype = "0 - NULL";
+                        tmpval = "NULL";
+                        qDebug() << "NULL";
+                    }
+                    else if(curst == 1) // quint8 (1)
+                    {
+                        tmpofflen = QString::number(contentoffset) + ", 1";
+                        tmptype = "1 - 8-bit int";
+                        tmpval = qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1));
+                        qDebug() << "1 byte" << qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1));
+                        contentoffset++;
+                    }
+                    else if(curst == 2) // quint16 (2)
+                    {
+                        tmpofflen = QString::number(contentoffset) + ", 2";
+                        tmptype = "2 - 16-bit int";
+                        tmpval = qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2));
+                        qDebug() << "2 byte:" << qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2));
+                        contentoffset = contentoffset + 2;
+                    }
+                    else if(curst == 3)
+                    {
+                        tmpofflen = QString::number(contentoffset) + ", 3";
+                        tmptype = "3 - 24-bit int";
+                        tmpval = qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3));
+                        qDebug() << "3 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3));
+                        contentoffset = contentoffset + 3;
+                    }
+                    else if(curst == 4)
+                    {
+                        tmpofflen = QString::number(contentoffset) + ", 4";
+                        tmptype = "4 - 32-bit int";
+                        tmpval = qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4));
+                        qDebug() << "4 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4));
+                        contentoffset = contentoffset + 4;
+                    }
+                    else if(curst == 5)
+                    {
+                        tmpofflen = QString::number(contentoffset) + ", 6";
+                        tmptype = "5 - 38-bit int";
+                        tmpval = qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6));
+                        qDebug() << "6 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6));
+                        contentoffset = contentoffset + 6;
+                    }
+                    else if(curst == 6)
+                    {
+                        tmpofflen = QString::number(contentoffset) + ", 8";
+                        tmptype = "6 - 64-bit int";
+                        tmpval = qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8));
+                        qDebug() << "8 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8));
+                        contentoffset = contentoffset + 8;
+                    }
+                    else if(curst == 7)
+                    {
+                        tmpofflen = QString::number(contentoffset) + ", 8";
+                        tmptype = "7 - 64-bit double";
+                        tmpval = qFromBigEndian<double>(pagearray->mid(contentoffset, 8));
+                        qDebug() << "8 bytes:" << qFromBigEndian<double>(pagearray->mid(contentoffset, 8));
+                        contentoffset = contentoffset + 8;
+                    }
+                    else if(curst == 8) // col length is zero, so content length doesn't change
+                    {
+                        tmptype = "8 - Integer value 0";
+                        tmpval = "0";
+                        qDebug() << "0";
+                    }
+                    else if(curst == 9) // col length is zero, so content length doesn't change)
+                    {
+                        tmptype = "9 - Integer value 1";
+                        tmpval = "1";
+                        qDebug() << "1";
+                    }
+                    else if(curst >= 12) // BLOB OR TEXT
+                    {
+                        if(curst % 2 == 0) // EVEN AND BLOB
+                        {
+                            tmpofflen = QString::number(contentoffset) + ", " + QString::number((curst - 12) / 2);
+                            tmptype = ">=12 && even - BLOB";
+                            tmpval = pagearray->mid(contentoffset, (curst - 12) / 2).toHex();
+                            qDebug() << "blob size:" << (curst - 12) / 2 << pagearray->mid(contentoffset, (curst-12) / 2).toHex();
+                            contentoffset = contentoffset + ((curst - 12) / 2);
+                        }
+                        else // ODD AND TEXT
+                        {
+                            tmpofflen = QString::number(contentoffset) + ", " + QString::number((curst - 13) / 2);
+                            tmptype = ">=13 & odd - TEXT";
+                            tmpval = QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
+                            qDebug() << "Text Size:" << (curst - 13) / 2 << QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
+                            contentoffset = contentoffset + ((curst - 13) / 2);
+                        }
+                    }
+                    AddContent(i, "True", tmpofflen, tmptype, tmpval);
+                    //serialtypes.append(GetSerialType(curst));
                     //qDebug() << "curstlen:" << curstlen << "curst:" << curst << "curserialtypelength:" << curserialtypelength;
                 }
-                qDebug() << "serialtypes:" << serialtypes;
+                //qDebug() << "serialtypes:" << serialtypes;
+                // that new offset is correct for where to start with the content... so once i return serial types, i can pull the values i need...
+                qDebug() << "new offset for column content:" << celloffarray.at(i) + payloadlength + rowidlength + recordlengthlength + recordlength - recordlengthlength;
             }
         }
     }
@@ -794,6 +906,11 @@ uint WombatSqlite::GetVarInt(QByteArray* pagearray, quint64 pageoffset, uint var
 
 uint WombatSqlite::GetSerialType(uint serialtype)
 {
+    /*
+    if(serialtype == 0) // NULL
+        return -1;
+    else if(serialtype == 1)
+    */
     // 0 = NULL (0)
     // 1 = quint8 (1)
     // 2 = quint16 (2)
@@ -807,6 +924,8 @@ uint WombatSqlite::GetSerialType(uint serialtype)
     // 10, 11 = reserved
     // N >= 12 (EVEN) TEXT/BLOB (N - 12) / 2 for size
     // N >= 13 (ODD) TEXT/BLOB (N - 13) / 2 for size
+
+    return serialtype;
 }
 
 /*

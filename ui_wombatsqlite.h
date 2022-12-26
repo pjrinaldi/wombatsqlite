@@ -232,10 +232,21 @@ public:
 
         splitter->addWidget(horizontalLayoutWidget);
         tablewidget = new QTableWidget(splitter);
+        if (tablewidget->columnCount() < 5)
+            tablewidget->setColumnCount(5);
         tablewidget->setObjectName(QString::fromUtf8("tablewidget"));
         sizePolicy1.setHeightForWidth(tablewidget->sizePolicy().hasHeightForWidth());
         tablewidget->setSizePolicy(sizePolicy1);
+        tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        tablewidget->setProperty("showDropIndicator", QVariant(false));
+        tablewidget->setAlternatingRowColors(true);
+        tablewidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        tablewidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        tablewidget->setCornerButtonEnabled(false);
+        tablewidget->setRowCount(0);
+        tablewidget->setColumnCount(5);
         splitter->addWidget(tablewidget);
+        tablewidget->verticalHeader()->setVisible(false);
         splitter_2->addWidget(splitter);
         propwidget = new QTableWidget(splitter_2);
         if (propwidget->columnCount() < 3)
