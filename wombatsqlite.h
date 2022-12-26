@@ -133,6 +133,7 @@ private slots:
     void SelectText(void);
     void ScrollHex(int linecount);
     void SelectionChanged(void);
+    void ContentSelect(void);
 
     void ValueSelected(void);
     void TagMenu(const QPoint &point);

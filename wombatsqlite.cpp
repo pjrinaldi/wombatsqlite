@@ -22,6 +22,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
     connect(ui->editscrollbar, SIGNAL(valueChanged(int)), this, SLOT(ScrollHex(int)), Qt::DirectConnection);
     connect(ui->hexedit, SIGNAL(selectionChanged()), this, SLOT(SelectionChanged()), Qt::DirectConnection);
+    connect(ui->tablewidget, SIGNAL(itemSelectionChanged()), this, SLOT(ContentSelect()), Qt::DirectConnection);
     ui->offsetedit->setVerticalScrollBar(ui->editscrollbar);
     ui->hexedit->setVerticalScrollBar(ui->editscrollbar);
     ui->utf8edit->setVerticalScrollBar(ui->editscrollbar);
@@ -1031,6 +1032,38 @@ void WombatSqlite::SelectText()
 
         OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
         LengthUpdate(vallist.at(1));
+    }
+}
+
+void WombatSqlite::ContentSelect()
+{
+    if(ui->tablewidget->currentRow() > -1 && ui->tablewidget->currentItem() != NULL)
+    {
+        QStringList vallist = ui->tablewidget->item(ui->tablewidget->currentRow(), 2)->text().split(", ");
+        if(vallist.count() == 2)
+        {
+            QTextCursor hexcursor = ui->hexedit->textCursor();
+            hexcursor.setPosition(vallist.at(0).toUInt() * 3);
+            hexcursor.setPosition((vallist.at(0).toUInt() + vallist.at(1).toUInt()) * 3 - 1, QTextCursor::KeepAnchor);
+            ui->hexedit->setTextCursor(hexcursor);
+
+            QTextCursor utf8cursor = ui->utf8edit->textCursor();
+            if(vallist.at(0).toUInt() > 15)
+            {
+                uint linenumber = vallist.at(0).toUInt() / 16;
+                utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
+                utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+            }
+            else
+            {
+                utf8cursor.setPosition(vallist.at(0).toUInt());
+                utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+            }
+            ui->utf8edit->setTextCursor(utf8cursor);
+
+            OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
+            LengthUpdate(vallist.at(1));
+        }
     }
 }
 
