@@ -1,6 +1,6 @@
 #include "wombatsqlite.h"
 
-// Copyright 2013-2020 Pasquale J. Rinaldi, Jr.
+// Copyright 2022-2023 Pasquale J. Rinaldi, Jr.
 // Distributed under the terms of the GNU General Public License version 2
 
 WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::WombatSqlite)

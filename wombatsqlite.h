@@ -1,7 +1,7 @@
 #ifndef WOMBATSQLITE_H
 #define WOMBATSQLITE_H
 
-// Copyright 2022-2022 Pasquale J. Rinaldi, Jr.
+// Copyright 2022-2023 Pasquale J. Rinaldi, Jr.
 // Distributed under the terms of the GNU General Public License version 2
 
 #include <QDebug>
