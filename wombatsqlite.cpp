@@ -1046,7 +1046,6 @@ void WombatSqlite::SelectText()
         if(vallist.at(0).toUInt() > 15)
         {
             uint linenumber = vallist.at(0).toUInt() / 16;
-            //ui->offsetedit->textCursor()->setPosition(linenumber - 1);
             ui->editscrollbar->setValue(linenumber - 1);
             utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
             utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
@@ -1081,13 +1080,16 @@ void WombatSqlite::ContentSelect()
             {
                 uint linenumber = vallist.at(0).toUInt() / 16;
                 ui->editscrollbar->setValue(linenumber - 1);
+                uint length = vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt() + vallist.at(1).toUInt() / 16;
+                if(16 < ((vallist.at(0).toUInt() % 16) + vallist.at(1).toUInt()) && ((vallist.at(0).toUInt() % 16) + vallist.at(1).toUInt()) < 32)
+                    length++;
                 //qDebug() << "linenumber:" << linenumber;
                 utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
-                utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt() + vallist.at(1).toUInt() / 16, QTextCursor::KeepAnchor);
+                utf8cursor.setPosition(length, QTextCursor::KeepAnchor);
+                //utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt() + vallist.at(1).toUInt() / 16, QTextCursor::KeepAnchor);
             }
             else
             {
-                qDebug() << "decimal position:" << vallist.at(0) << "decimal length:" << vallist.at(1);
                 // JUST NEED TO FIGURE OUT IF THIS SMALL ONE WRAPS TO A NEW LINE, AND THEN I NEED TO ADD 1 TO IT...
                 utf8cursor.setPosition(vallist.at(0).toUInt());
                 utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
