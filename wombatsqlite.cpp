@@ -1084,6 +1084,7 @@ void WombatSqlite::ContentSelect()
             }
             else
             {
+                qDebug() << "decimal position:" << vallist.at(0) << "decimal length:" << vallist.at(1);
                 // JUST NEED TO FIGURE OUT IF THIS SMALL ONE WRAPS TO A NEW LINE, AND THEN I NEED TO ADD 1 TO IT...
                 utf8cursor.setPosition(vallist.at(0).toUInt());
                 utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
