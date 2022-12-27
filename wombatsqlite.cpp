@@ -1046,6 +1046,8 @@ void WombatSqlite::SelectText()
         if(vallist.at(0).toUInt() > 15)
         {
             uint linenumber = vallist.at(0).toUInt() / 16;
+            //ui->offsetedit->textCursor()->setPosition(linenumber - 1);
+            ui->editscrollbar->setValue(linenumber - 1);
             utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
             utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
         }
@@ -1078,6 +1080,7 @@ void WombatSqlite::ContentSelect()
             if(vallist.at(0).toUInt() > 15)
             {
                 uint linenumber = vallist.at(0).toUInt() / 16;
+                ui->editscrollbar->setValue(linenumber - 1);
                 //qDebug() << "linenumber:" << linenumber;
                 utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
                 utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt() + vallist.at(1).toUInt() / 16, QTextCursor::KeepAnchor);
