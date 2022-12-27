@@ -28,7 +28,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     ui->hexedit->setVerticalScrollBar(ui->editscrollbar);
     ui->utf8edit->setVerticalScrollBar(ui->editscrollbar);
     ui->editscrollbar->setVisible(true);
-    //connect(ui->offsetedit, ui->hexedit, ui->utf8edit, ui->editscrollbar
+    connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(ShowAbout()), Qt::DirectConnection);
     /*
     connect(ui->treewidget, SIGNAL(itemSelectionChanged()), this, SLOT(KeySelected()), Qt::DirectConnection);
     connect(ui->tablewidget, SIGNAL(itemSelectionChanged()), this, SLOT(ValueSelected()), Qt::DirectConnection);
@@ -183,10 +183,8 @@ void WombatSqlite::PublishReport()
 
 void WombatSqlite::ShowAbout()
 {
-    /*
     AboutBox* aboutbox = new AboutBox();
     aboutbox->exec();
-    */
 }
 
 void WombatSqlite::CreateNewTag()
