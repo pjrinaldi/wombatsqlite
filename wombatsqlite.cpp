@@ -726,6 +726,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
             }
             else if(pageheader.type == 0x0a) // index leaf
             {
+                qDebug() << "index leaf, need to parse similar to table leaf...";
             }
             else if(pageheader.type == 0x0d) // table leaf
             {
