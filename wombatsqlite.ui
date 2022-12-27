@@ -358,11 +358,12 @@
          <number>0</number>
         </property>
         <property name="columnCount">
-         <number>5</number>
+         <number>6</number>
         </property>
         <attribute name="verticalHeaderVisible">
          <bool>false</bool>
         </attribute>
+        <column/>
         <column/>
         <column/>
         <column/>

@@ -17,7 +17,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     connect(ui->actionOpenDB, SIGNAL(triggered()), this, SLOT(OpenDB()), Qt::DirectConnection);
     ui->tablewidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
-    ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Is Live", "Offset,Length", "Type", "Value"});
+    ui->tablewidget->setHorizontalHeaderLabels({"Tag", "Is Live", "Row ID", "Offset,Length", "Type", "Value"});
     connect(ui->treewidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(FileSelected(QListWidgetItem*)), Qt::DirectConnection);
     connect(ui->pagespinbox, SIGNAL(valueChanged(int)), this, SLOT(PageChanged(int)), Qt::DirectConnection);
     connect(ui->propwidget, SIGNAL(itemSelectionChanged()), this, SLOT(SelectText()), Qt::DirectConnection);
@@ -586,13 +586,14 @@ void WombatSqlite::ParseHeader(QByteArray* pageheader)
     }
 }
 
-void WombatSqlite::AddContent(int row, QString islive, QString offlen, QString type, QString val)
+void WombatSqlite::AddContent(int row, QString islive, QString rowid, QString offlen, QString type, QString val)
 {
     ui->tablewidget->setItem(row, 0, new QTableWidgetItem(""));
     ui->tablewidget->setItem(row, 1, new QTableWidgetItem(islive));
-    ui->tablewidget->setItem(row, 2, new QTableWidgetItem(offlen));
-    ui->tablewidget->setItem(row, 3, new QTableWidgetItem(type));
-    ui->tablewidget->setItem(row, 4, new QTableWidgetItem(val));
+    ui->tablewidget->setItem(row, 2, new QTableWidgetItem(rowid));
+    ui->tablewidget->setItem(row, 3, new QTableWidgetItem(offlen));
+    ui->tablewidget->setItem(row, 4, new QTableWidgetItem(type));
+    ui->tablewidget->setItem(row, 5, new QTableWidgetItem(val));
 }
 
 void WombatSqlite::AddProperty(int row, QString offlen, QString val, QString desc)
@@ -709,6 +710,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
             //qDebug() << "cell array " + QString::number(i) + " offset:" << qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2));
         }
         uint curtmprow = 0;
+        QString tmprowid = "";
         for(int i=0; i < celloffarray.count(); i++)
         {
             //qDebug() << "cell off array " + QString::number(i+1) + ":" << celloffarray.at(i);
@@ -732,6 +734,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                 //qDebug() << "payload length:" << payloadlength << "payload size:" << payloadsize;
                 uint rowidlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength);
                 uint rowid = GetVarInt(pagearray, celloffarray.at(i) + payloadlength, rowidlength);
+                tmprowid = QString::number(rowid);
                 //qDebug() << "rowid length:" << rowidlength << "row id:" << rowid;
                 uint recordlengthlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength + rowidlength);
                 uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength + rowidlength, recordlengthlength);
@@ -863,9 +866,8 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                         }
                     }
                     //qDebug() << "curtmprow:" << curtmprow;
-                    AddContent(curtmprow, "True", tmpofflen, tmptype, tmpval);
+                    AddContent(curtmprow, "True", tmprowid, tmpofflen, tmptype, tmpval);
                     curtmprow++;
-                    //AddContent(i, "True", tmpofflen, tmptype, tmpval);
                     //serialtypes.append(GetSerialType(curst));
                     //qDebug() << "curstlen:" << curstlen << "curst:" << curst << "curserialtypelength:" << curserialtypelength;
                 }
@@ -1033,6 +1035,7 @@ void WombatSqlite::SelectText()
 {
     if(ui->propwidget->currentRow() > -1 && ui->propwidget->currentItem() != NULL)
     {
+        ui->tablewidget->setCurrentItem(NULL);
         QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
         QTextCursor hexcursor = ui->hexedit->textCursor();
         hexcursor.setPosition(vallist.at(0).toUInt() * 3);
@@ -1062,7 +1065,8 @@ void WombatSqlite::ContentSelect()
 {
     if(ui->tablewidget->currentRow() > -1 && ui->tablewidget->currentItem() != NULL)
     {
-        QStringList vallist = ui->tablewidget->item(ui->tablewidget->currentRow(), 2)->text().split(", ");
+        ui->propwidget->setCurrentItem(NULL);
+        QStringList vallist = ui->tablewidget->item(ui->tablewidget->currentRow(), 3)->text().split(", ");
         if(vallist.count() == 2)
         {
             QTextCursor hexcursor = ui->hexedit->textCursor();

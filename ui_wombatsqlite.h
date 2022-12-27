@@ -232,8 +232,8 @@ public:
 
         splitter->addWidget(horizontalLayoutWidget);
         tablewidget = new QTableWidget(splitter);
-        if (tablewidget->columnCount() < 5)
-            tablewidget->setColumnCount(5);
+        if (tablewidget->columnCount() < 6)
+            tablewidget->setColumnCount(6);
         tablewidget->setObjectName(QString::fromUtf8("tablewidget"));
         sizePolicy1.setHeightForWidth(tablewidget->sizePolicy().hasHeightForWidth());
         tablewidget->setSizePolicy(sizePolicy1);
@@ -244,7 +244,7 @@ public:
         tablewidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         tablewidget->setCornerButtonEnabled(false);
         tablewidget->setRowCount(0);
-        tablewidget->setColumnCount(5);
+        tablewidget->setColumnCount(6);
         splitter->addWidget(tablewidget);
         tablewidget->verticalHeader()->setVisible(false);
         splitter_2->addWidget(splitter);
