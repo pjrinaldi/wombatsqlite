@@ -13,13 +13,12 @@
 #include <QDirIterator>
 #include "ui_wombatsqlite.h"
 #include "aboutbox.h"
+#include "tagmanager.h"
 
 #include <bitset>
 
 /*
-#include "tagmanager.h"
 #include "htmlviewer.h"
-#include "libregf.h"
 #include "cssstrings.h"
 */
 
