@@ -722,6 +722,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                 AddContent(curtmprow, "True", "", QString::number(celloffarray.at(i) + 4) + ", " + QString::number(payloadsize), "Payload", QString::fromStdString(pagearray->mid(celloffarray.at(i) + 4 + payloadlength, payloadsize).toStdString()));
                 curtmprow++;
                 /*
+                 * payload = 33, byte array 4, initial payload not in overflow - 27, 
                 uint recordlengthlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength);
                 uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength, recordlengthlength);
                 quint64 contentoffset = celloffarray.at(i) + payloadlength + recordlength;
