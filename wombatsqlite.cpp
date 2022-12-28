@@ -45,16 +45,15 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     prehtml = "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'></head><body style='" + ReturnCssString(0) + "'>\n";
     prehtml += "<div style='" + ReturnCssString(1) + "'><h1><span id='casename'>Registry Report</span></h1></div>\n";
     psthtml = "</body></html>";
-
+    */
     tags.clear();
     tagmenu = new QMenu(ui->tablewidget);
     UpdateTagsMenu();
 
-    hives.clear();
+    //hives.clear();
 
     ui->tablewidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->tablewidget, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(TagMenu(const QPoint &)), Qt::DirectConnection);
-    */
 }
 
 WombatSqlite::~WombatSqlite()
@@ -204,6 +203,10 @@ void WombatSqlite::CreateNewTag()
         UpdateTagsMenu();
     }
     ui->tablewidget->selectedItems().first()->setText(tagname);
+
+    // NEED TO STORE TAGGED ITEM TO REPOPULATE IT WHEN SELECTED... I CAN STORE IT BY
+    // TREEWIDGET->SELECTEDROW, PAGE NUMBER, CONTENT->SELECTEDROW
+
     QString idkeyvalue = statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text();
     for(int i=0; i < taggeditems.count(); i++)
     {
@@ -216,7 +219,6 @@ void WombatSqlite::CreateNewTag()
 
 void WombatSqlite::UpdateTagsMenu()
 {
-    /*
     tagmenu->clear();
     newtagaction = new QAction("New Tag", tagmenu);
     newtagaction->setIcon(QIcon(":/bar/newtag"));
@@ -236,7 +238,6 @@ void WombatSqlite::UpdateTagsMenu()
     remtagaction->setIcon(QIcon(":/bar/removetag"));
     connect(remtagaction, SIGNAL(triggered()), this, SLOT(RemoveTag()));
     tagmenu->addAction(remtagaction);
-    */
 }
 
 void WombatSqlite::SetTag()
@@ -1467,12 +1468,10 @@ QString WombatSqlite::ConvertWindowsTimeToUnixTimeUTC(uint64_t input)
 
 void WombatSqlite::TagMenu(const QPoint &pt)
 {
-    /*
     QTableWidgetItem* currow = ui->tablewidget->itemAt(pt);
     if(ui->tablewidget->item(currow->row(), 0)->text().isEmpty())
 	remtagaction->setEnabled(false);
     else
 	remtagaction->setEnabled(true);
     tagmenu->exec(ui->tablewidget->mapToGlobal(pt));
-    */
 }
