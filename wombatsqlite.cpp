@@ -186,7 +186,6 @@ void WombatSqlite::ShowAbout()
 
 void WombatSqlite::CreateNewTag()
 {
-    /*
     QString tagname = "";
     QInputDialog* newtagdialog = new QInputDialog(this);
     newtagdialog->setCancelButtonText("Cancel");
@@ -207,14 +206,16 @@ void WombatSqlite::CreateNewTag()
     // NEED TO STORE TAGGED ITEM TO REPOPULATE IT WHEN SELECTED... I CAN STORE IT BY
     // TREEWIDGET->SELECTEDROW, PAGE NUMBER, CONTENT->SELECTEDROW
 
-    QString idkeyvalue = statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text();
+    QString idvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(ui->tablewidget->currentRow());
+    //QString idkeyvalue = statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text();
     for(int i=0; i < taggeditems.count(); i++)
     {
-        if(taggeditems.at(i).contains(idkeyvalue))
+        if(taggeditems.at(i).contains(idvalue))
             taggeditems.removeAt(i);
     }
-    taggeditems.append(tagname + "|" + statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text() + "|" + ui->plaintext->toPlainText());
-    */
+    // may want to store all the columns for the row here...
+    taggeditems.append(newtagaction->iconText() + "|" + idvalue);
+    //taggeditems.append(tagname + "|" + statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text() + "|" + ui->plaintext->toPlainText());
 }
 
 void WombatSqlite::UpdateTagsMenu()
@@ -242,34 +243,33 @@ void WombatSqlite::UpdateTagsMenu()
 
 void WombatSqlite::SetTag()
 {
-    /*
     QAction* tagaction = qobject_cast<QAction*>(sender());
-    QString idkeyvalue = statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text();
+    QString idvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(ui->tablewidget->currentRow());
+    //qDebug() << "idvalue:" << idvalue;
     if(!ui->tablewidget->selectedItems().first()->text().isEmpty())
     {
         for(int i=0; i < taggeditems.count(); i++)
         {
-            if(taggeditems.at(i).contains(idkeyvalue))
+            if(taggeditems.at(i).contains(idvalue))
                 taggeditems.removeAt(i);
         }
     }
-    taggeditems.append(tagaction->iconText() + "|" + statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text() + "|" + ui->plaintext->toPlainText());
-
+    // may want to store all the columns for the row here...
+    taggeditems.append(tagaction->iconText() + "|" + idvalue);
+    //taggeditems.append(tagaction->iconText() + "|" + statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text() + "|" + ui->plaintext->toPlainText());
     ui->tablewidget->selectedItems().first()->setText(tagaction->iconText());
-    */
 }
 
 void WombatSqlite::RemoveTag()
 {
-    /*
     ui->tablewidget->selectedItems().first()->setText("");
-    QString idkeyvalue = statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text();
+    QString idvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(ui->tablewidget->currentRow());
+    //QString idkeyvalue = statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text();
     for(int i=0; i < taggeditems.count(); i++)
     {
-        if(taggeditems.at(i).contains(idkeyvalue))
+        if(taggeditems.at(i).contains(idvalue))
             taggeditems.removeAt(i);
     }
-    */
 }
 
 void WombatSqlite::ValueSelected(void)
@@ -583,9 +583,9 @@ void WombatSqlite::ParseHeader(QByteArray* pageheader)
     }
 }
 
-void WombatSqlite::AddContent(int row, QString islive, QString rowid, QString offlen, QString type, QString val)
+void WombatSqlite::AddContent(int row, QString islive, QString rowid, QString offlen, QString type, QString val, QString tag)
 {
-    ui->tablewidget->setItem(row, 0, new QTableWidgetItem(""));
+    ui->tablewidget->setItem(row, 0, new QTableWidgetItem(tag));
     ui->tablewidget->setItem(row, 1, new QTableWidgetItem(islive));
     ui->tablewidget->setItem(row, 2, new QTableWidgetItem(rowid));
     ui->tablewidget->setItem(row, 3, new QTableWidgetItem(offlen));
@@ -716,11 +716,25 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
             {
                 quint32 pagenum = qFromBigEndian<quint32>(pagearray->mid(celloffarray.at(i), 4));
                 //qDebug() << "pagenum:" << pagenum;
-                AddContent(curtmprow, "True", "", QString::number(celloffarray.at(i)) + ", 4", "Page Number", QString::number(pagenum));
+		QString curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
+		QString tagstr = "";
+		for(int j=0; j < taggeditems.count(); j++)
+		{
+		    if(taggeditems.at(j).contains(curidvalue))
+			tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
+		}
+                AddContent(curtmprow, "True", "", QString::number(celloffarray.at(i)) + ", 4", "Page Number", QString::number(pagenum), tagstr);
                 curtmprow++;
                 uint payloadlength = GetVarIntLength(pagearray, celloffarray.at(i) + 4);
                 uint payloadsize = GetVarInt(pagearray, celloffarray.at(i) + 4, payloadlength);
-                AddContent(curtmprow, "True", "", QString::number(celloffarray.at(i) + 4) + ", " + QString::number(payloadsize), "Payload", QString::fromStdString(pagearray->mid(celloffarray.at(i) + 4 + payloadlength, payloadsize).toStdString()));
+		tagstr = "";
+		curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
+		for(int j=0; j < taggeditems.count(); j++)
+		{
+		    if(taggeditems.at(j).contains(curidvalue))
+			tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
+		}
+                AddContent(curtmprow, "True", "", QString::number(celloffarray.at(i) + 4) + ", " + QString::number(payloadsize), "Payload", QString::fromStdString(pagearray->mid(celloffarray.at(i) + 4 + payloadlength, payloadsize).toStdString()), tagstr);
                 curtmprow++;
                 /*
                  * payload = 33, byte array 4, initial payload not in overflow - 27, 
@@ -854,7 +868,14 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                 quint32 pagenum = qFromBigEndian<quint32>(pagearray->mid(celloffarray.at(i), 4));
                 uint rowidlength = GetVarIntLength(pagearray, celloffarray.at(i) + 4);
                 uint rowid = GetVarInt(pagearray, celloffarray.at(i) + 4, rowidlength);
-                AddContent(curtmprow, "True", QString::number(rowid), QString::number(celloffarray.at(i)) + ", 4", "Page Number", QString::number(pagenum));
+		QString curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
+		QString tagstr = "";
+		for(int j=0; j < taggeditems.count(); j++)
+		{
+		    if(taggeditems.at(j).contains(curidvalue))
+			tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
+		}
+                AddContent(curtmprow, "True", QString::number(rowid), QString::number(celloffarray.at(i)) + ", 4", "Page Number", QString::number(pagenum), tagstr);
                 curtmprow++;
                 //qDebug() << "pagenum:" << pagenum;
             }
@@ -982,7 +1003,14 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                         }
                     }
                     //qDebug() << "curtmprow:" << curtmprow;
-                    AddContent(curtmprow, "True", "", tmpofflen, tmptype, tmpval);
+		    QString curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
+		    QString tagstr = "";
+		    for(int j=0; j < taggeditems.count(); j++)
+		    {
+			if(taggeditems.at(j).contains(curidvalue))
+			    tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
+		    }
+                    AddContent(curtmprow, "True", "", tmpofflen, tmptype, tmpval, tagstr);
                     curtmprow++;
                 }
             }
@@ -1121,7 +1149,14 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                         }
                     }
                     //qDebug() << "curtmprow:" << curtmprow;
-                    AddContent(curtmprow, "True", tmprowid, tmpofflen, tmptype, tmpval);
+		    QString curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
+		    QString tagstr = "";
+		    for(int j=0; j < taggeditems.count(); j++)
+		    {
+			if(taggeditems.at(j).contains(curidvalue))
+			    tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
+		    }
+                    AddContent(curtmprow, "True", tmprowid, tmpofflen, tmptype, tmpval, tagstr);
                     curtmprow++;
                     //serialtypes.append(GetSerialType(curst));
                     //qDebug() << "curstlen:" << curstlen << "curst:" << curst << "curserialtypelength:" << curserialtypelength;
@@ -1131,6 +1166,7 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                 //qDebug() << "new offset for column content:" << celloffarray.at(i) + payloadlength + rowidlength + recordlengthlength + recordlength - recordlengthlength;
             }
         }
+	// UPDATE TAGS HERE....
         ui->tablewidget->resizeColumnsToContents();
     }
     else // root page of a table with no rows

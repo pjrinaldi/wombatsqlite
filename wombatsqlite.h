@@ -173,7 +173,7 @@ private:
     quint32 pagesize = 0;
     quint64 curpage = 0;
     void AddProperty(int row, QString offlen, QString val, QString desc);
-    void AddContent(int row, QString islive, QString rowid, QString offlen, QString type, QString val);
+    void AddContent(int row, QString islive, QString rowid, QString offlen, QString type, QString val, QString tag);
     void LoadPage(void);
     void ParseHeader(QByteArray* pageheader);
     void PopulateHeader(void);
