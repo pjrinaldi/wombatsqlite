@@ -14,13 +14,10 @@
 #include "ui_wombatsqlite.h"
 #include "aboutbox.h"
 #include "tagmanager.h"
-
-#include <bitset>
-
-/*
 #include "htmlviewer.h"
 #include "cssstrings.h"
-*/
+
+#include <bitset>
 
 #define TICKS_PER_SECOND 10000000
 #define EPOCH_DIFFERENCE 11644473600LL
