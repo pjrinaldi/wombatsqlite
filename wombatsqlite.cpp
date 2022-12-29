@@ -1343,6 +1343,7 @@ void WombatSqlite::SelectText()
         }
         else
         {
+            ui->editscrollbar->setValue(0);
             utf8cursor.setPosition(vallist.at(0).toUInt());
             utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
         }
@@ -1382,6 +1383,7 @@ void WombatSqlite::ContentSelect()
             else
             {
                 // JUST NEED TO FIGURE OUT IF THIS SMALL ONE WRAPS TO A NEW LINE, AND THEN I NEED TO ADD 1 TO IT...
+		ui->editscrollbar->setValue(0);
                 utf8cursor.setPosition(vallist.at(0).toUInt());
                 utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
             }
