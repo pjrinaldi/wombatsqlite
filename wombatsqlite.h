@@ -23,42 +23,16 @@
 #define EPOCH_DIFFERENCE 11644473600LL
 #define NSEC_BTWN_1904_1970	(uint32_t) 2082844800U
 
-/*
-class HexEdit : public QPlainTextEdit
-{
-    Q_OBJECT
-
-    public:
-
-    protected:
-        void mouseDoubleClickEvent(QMouseEvent* e)
-        {
-            if(e)
-            {
-                qDebug() << "figure out how to implement this and the problem will be solved, or pick another signal.";
-                UpdateOffsetLabel(QString::number(this->textCursor().selectionStart() / 3, 16));
-                //ui->utf8edit->textCursor().clearSelection();
-                //ui->propwidget->setCurrentItem(NULL);
-                //OffsetUpdate(QString::number(ui->hexedit->textCursor().selectionStart() / 3, 16));
-            }
-        };
-
-    signals:
-        void UpdateOffsetLabel(QString tmptext);
-        //void LaunchFile(const QModelIndex &index);
-};
-*/
-
 struct WalHeader
 {
-        quint32 header; // = qFromBigEndian<quint32>(pageheader->mid(0, 4));
-        quint32 fileversion; // = qFromBigEndian<quint32>(pageheader->mid(4, 4));
-        quint32 pagesize; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
-        quint32 checkptseqnum; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
-        quint32 salt1; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
-        quint32 salt2; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
-        quint32 checksum1; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
-        quint32 checksum2; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+    quint32 header; // = qFromBigEndian<quint32>(pageheader->mid(0, 4));
+    quint32 fileversion; // = qFromBigEndian<quint32>(pageheader->mid(4, 4));
+    quint32 pagesize; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
+    quint32 checkptseqnum; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
+    quint32 salt1; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
+    quint32 salt2; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
+    quint32 checksum1; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
+    quint32 checksum2; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
 };
 
 struct JournalHeader
@@ -73,7 +47,6 @@ struct JournalHeader
 
 struct SqliteHeader
 {
-    //char header[16];
     QString header; // = QString::fromStdString(pageheader->mid(0, 16).toStdString());
     quint16 pagesize; // = qFromBigEndian<quint16>(pageheader->mid(16, 2));
     quint8 writeversion; // = qFromBigEndian<quint8>(pageheader->mid(18, 1));
