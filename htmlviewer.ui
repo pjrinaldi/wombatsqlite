@@ -55,7 +55,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="wombatregistry.qrc">
+        <iconset resource="wombatsqlite.qrc">
          <normaloff>:/bar/home</normaloff>:/bar/home</iconset>
        </property>
        <property name="iconSize">
@@ -72,8 +72,8 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="wombatregistry.qrc">
-         <normaloff>:/bar/previous</normaloff>:/bar/previous</iconset>
+        <iconset resource="wombatsqlite.qrc">
+         <normaloff>:/bar/prev</normaloff>:/bar/prev</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -89,7 +89,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="wombatregistry.qrc">
+        <iconset resource="wombatsqlite.qrc">
          <normaloff>:/bar/next</normaloff>:/bar/next</iconset>
        </property>
        <property name="iconSize">
@@ -128,7 +128,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="wombatregistry.qrc"/>
+  <include location="wombatsqlite.qrc"/>
  </resources>
  <connections/>
 </ui>

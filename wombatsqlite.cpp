@@ -32,24 +32,15 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
     connect(ui->actionManageTags, SIGNAL(triggered()), this, SLOT(ManageTags()), Qt::DirectConnection);
     connect(ui->actionPreviewReport, SIGNAL(triggered()), this, SLOT(PreviewReport()), Qt::DirectConnection);
     connect(ui->actionPublish, SIGNAL(triggered()), this, SLOT(PublishReport()), Qt::DirectConnection);
-    /*
-    connect(ui->treewidget, SIGNAL(itemSelectionChanged()), this, SLOT(KeySelected()), Qt::DirectConnection);
-    connect(ui->tablewidget, SIGNAL(itemSelectionChanged()), this, SLOT(ValueSelected()), Qt::DirectConnection);
-    // initialize temp directory for html code...
     QDir tmpdir;
-    tmpdir.mkpath(QDir::tempPath() + "/wr");
-    tmpdir.mkpath(QDir::tempPath() + "/wr/tagged");
+    tmpdir.mkpath(QDir::tempPath() + "/wsf");
     // initialize Preview Report HTML code
     prehtml = "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'></head><body style='" + ReturnCssString(0) + "'>\n";
-    prehtml += "<div style='" + ReturnCssString(1) + "'><h1><span id='casename'>Registry Report</span></h1></div>\n";
+    prehtml += "<div style='" + ReturnCssString(1) + "'><h1><span id='casename'>SQLite Report</span></h1></div>\n";
     psthtml = "</body></html>";
-    */
     tags.clear();
     tagmenu = new QMenu(ui->tablewidget);
     UpdateTagsMenu();
-
-    //hives.clear();
-
     ui->tablewidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->tablewidget, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(TagMenu(const QPoint &)), Qt::DirectConnection);
 }
@@ -57,7 +48,7 @@ WombatSqlite::WombatSqlite(QWidget* parent) : QMainWindow(parent), ui(new Ui::Wo
 WombatSqlite::~WombatSqlite()
 {
     delete ui;
-    //QDir tmpdir(QDir::tempPath() + "/wr");
+    //QDir tmpdir(QDir::tempPath() + "/wsf");
     //tmpdir.removeRecursively();
 }
 
@@ -93,11 +84,6 @@ void WombatSqlite::ManageTags()
 
 void WombatSqlite::UpdatePreviewLinks()
 {
-    /*
-    // POSSIBLY REBUILD THE MAIN PAGE EVERY TIME, RATHER THAN FIND AND REPLACE...
-    QDir tmpdir(QDir::tempPath() + "/wr/tagged");
-    tmpdir.removeRecursively();
-    tmpdir.mkpath(QDir::tempPath() + "/wr/tagged");
     QString curcontent = "";
     curcontent += "<div id='toc'><h2>Contents</h2>";
     for(int i=0; i < tags.count(); i++)
@@ -105,6 +91,33 @@ void WombatSqlite::UpdatePreviewLinks()
         curcontent += "<span" + QString::number(i) + "'><a href='#t" + QString::number(i) + "'>" + tags.at(i) + "</a></span><br/>\n";
     }
     curcontent += "<h2>Tagged Items</h2>";
+    for(int i=0; i < tags.count(); i++)
+    {
+        curcontent += "<div id='t" + QString::number(i) + "'><h3>" + tags.at(i) + "</h3><br/><table>";
+        for(int j=0; j < taggeditems.count(); j++)
+        {
+            if(taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(0) == tags.at(i))
+            {
+                //qDebug() << "file:" << ui->treewidget->item(taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(1).split(",").at(0).toUInt())->text().split(" (").at(0);
+                QString filename = ui->treewidget->item(taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(1).split(",").at(0).toUInt())->text().split(" (").at(0);
+                QString pagetxt = "Page: " + taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(1).split(",").at(1);
+                QStringList contentlist = taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(2).split(";");
+                //qDebug() << "contentlist:" << contentlist;
+                curcontent += "<tr><td style='" + ReturnCssString(11) + "'>";
+                curcontent += "Is Live: " + contentlist.at(0) + "<br/>";
+                curcontent += "RowID: " + contentlist.at(1) + "<br/>";
+                curcontent += "Offset, Length: " + contentlist.at(2) + "<br/>";
+                curcontent += "Serial Type: " + contentlist.at(3) + "<br/>";
+                curcontent += "Value: " + contentlist.at(4) + "<br/><pre>";
+                curcontent += "Binary Content<br/>---------------<br/>";
+                curcontent += contentlist.at(5) + " " + contentlist.at(6) + "</pre><br/>";
+                curcontent += "On " + pagetxt + " From " + filename + " file.";
+                curcontent += "</td></tr>";
+            }
+        }
+        curcontent += "</table></div><br/>\n";
+    }
+    /*
     for(int i=0; i < tags.count(); i++)
     {
         curcontent += "<div id='t" + QString::number(i) + "'><h3>" + tags.at(i) + "</h3><br/><table><tr>";
@@ -130,8 +143,9 @@ void WombatSqlite::UpdatePreviewLinks()
         }
         curcontent += "</tr></table></div><br/>\n";
     }
+    */
     reportstring = prehtml + curcontent + psthtml;
-    QFile indxfile(QDir::tempPath() + "/wr/index.html");
+    QFile indxfile(QDir::tempPath() + "/wsf/index.html");
     if(!indxfile.isOpen())
         indxfile.open(QIODevice::WriteOnly | QIODevice::Text);
     if(indxfile.isOpen())
@@ -139,30 +153,27 @@ void WombatSqlite::UpdatePreviewLinks()
         indxfile.write(reportstring.toStdString().c_str());
         indxfile.close();
     }
-    */
 }
 
 void WombatSqlite::PreviewReport()
 {
-    /*
     UpdatePreviewLinks();
     HtmlViewer* htmlviewer = new HtmlViewer();
-    htmlviewer->LoadHtml(QDir::tempPath() + "/wr/index.html");
+    htmlviewer->LoadHtml(QDir::tempPath() + "/wsf/index.html");
     htmlviewer->show();
-    */
 }
 
 void WombatSqlite::PublishReport()
 {
-    /*
     UpdatePreviewLinks();
     QString savepath = QFileDialog::getExistingDirectory(this, tr("Select Report Folder"), QDir::homePath(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if(!savepath.isEmpty())
     {
         // Make tagged path to store tagged registry files
-        QDir tmppath;
-        tmppath.mkpath(savepath + "/tagged/");
-        QFile::copy(QDir::tempPath() + "/wr/index.html", savepath + "/index.html");
+        //QDir tmppath;
+        //tmppath.mkpath(savepath + "/tagged/");
+        QFile::copy(QDir::tempPath() + "/wsf/index.html", savepath + "/index.html");
+        /*
         QDirIterator it(QString(QDir::tempPath() + "/wr/tagged"), QDirIterator::NoIteratorFlags);
         while(it.hasNext())
         {
@@ -172,8 +183,8 @@ void WombatSqlite::PublishReport()
                 QFile::copy(curfile, savepath + "/tagged/" + curfile.split("/").last());
             }
         }
+        */
     }
-    */
 }
 
 void WombatSqlite::ShowAbout()
@@ -205,6 +216,9 @@ void WombatSqlite::CreateNewTag()
     // TREEWIDGET->SELECTEDROW, PAGE NUMBER, CONTENT->SELECTEDROW
 
     QString idvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(ui->tablewidget->currentRow());
+    QString idcontent = ui->tablewidget->selectedItems().at(1)->text() + ";" + ui->tablewidget->selectedItems().at(2)->text() + ";" + ui->tablewidget->selectedItems().at(3)->text() + ";" + ui->tablewidget->selectedItems().at(4)->text() + ";" + ui->tablewidget->selectedItems().at(5)->text() + ";" + ui->hexedit->textCursor().selectedText() + ";" + ui->utf8edit->textCursor().selectedText();
+    //qDebug() << "tagname:" << tagname << "id value:" << idvalue;
+    //qDebug() << "content to save:" << ui->tablewidget->selectedItems().at(1)->text() << ui->tablewidget->selectedItems().at(2)->text() << ui->tablewidget->selectedItems().at(3)->text() << ui->tablewidget->selectedItems().at(4)->text() << ui->tablewidget->selectedItems().at(5)->text() << ui->hexedit->textCursor().selectedText() << ui->utf8edit->textCursor().selectedText();
     //QString idkeyvalue = statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text();
     for(int i=0; i < taggeditems.count(); i++)
     {
@@ -212,7 +226,7 @@ void WombatSqlite::CreateNewTag()
             taggeditems.removeAt(i);
     }
     // may want to store all the columns for the row here...
-    taggeditems.append(newtagaction->iconText() + "|" + idvalue);
+    taggeditems.append(tagname + "|" + idvalue + "|" + idcontent);
     //taggeditems.append(tagname + "|" + statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text() + "|" + ui->plaintext->toPlainText());
 }
 
@@ -243,6 +257,7 @@ void WombatSqlite::SetTag()
 {
     QAction* tagaction = qobject_cast<QAction*>(sender());
     QString idvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(ui->tablewidget->currentRow());
+    QString idcontent = ui->tablewidget->selectedItems().at(1)->text() + ";" + ui->tablewidget->selectedItems().at(2)->text() + ";" + ui->tablewidget->selectedItems().at(3)->text() + ";" + ui->tablewidget->selectedItems().at(4)->text() + ";" + ui->tablewidget->selectedItems().at(5)->text() + ";" + ui->hexedit->textCursor().selectedText() + ";" + ui->utf8edit->textCursor().selectedText();
     //qDebug() << "idvalue:" << idvalue;
     if(!ui->tablewidget->selectedItems().first()->text().isEmpty())
     {
@@ -253,7 +268,7 @@ void WombatSqlite::SetTag()
         }
     }
     // may want to store all the columns for the row here...
-    taggeditems.append(tagaction->iconText() + "|" + idvalue);
+    taggeditems.append(tagaction->iconText() + "|" + idvalue + "|" + idcontent);
     //taggeditems.append(tagaction->iconText() + "|" + statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text() + "|" + ui->plaintext->toPlainText());
     ui->tablewidget->selectedItems().first()->setText(tagaction->iconText());
 }

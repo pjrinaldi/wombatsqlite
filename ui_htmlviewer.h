@@ -58,7 +58,7 @@ public:
         backbutton = new QPushButton(HtmlViewer);
         backbutton->setObjectName(QString::fromUtf8("backbutton"));
         QIcon icon1;
-        icon1.addFile(QString::fromUtf8(":/bar/previous"), QSize(), QIcon::Normal, QIcon::Off);
+        icon1.addFile(QString::fromUtf8(":/bar/prev"), QSize(), QIcon::Normal, QIcon::Off);
         backbutton->setIcon(icon1);
         backbutton->setIconSize(QSize(32, 32));
 

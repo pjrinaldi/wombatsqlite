@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>About Wombat SQLite</string>
+   <string>About Wombat SQLite Forensics</string>
   </property>
   <property name="modal">
    <bool>true</bool>

@@ -93,7 +93,7 @@ public:
 
     void retranslateUi(QDialog *AboutBox)
     {
-        AboutBox->setWindowTitle(QCoreApplication::translate("AboutBox", "About Wombat SQLite", nullptr));
+        AboutBox->setWindowTitle(QCoreApplication::translate("AboutBox", "About Wombat SQLite Forensics", nullptr));
         piclabel->setText(QString());
         textlabel->setText(QString());
     } // retranslateUi
