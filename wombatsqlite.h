@@ -146,7 +146,7 @@ private:
     void LoadPage(void);
     void ParseHeader(QByteArray* pageheader);
     void PopulateHeader(void);
-    void ParsePage(QByteArray* pagearray, quint8 filetype, quint64 curpage);
+    void ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage);
     uint GetVarIntLength(QByteArray* pagearray, quint64 pageoffset);
     uint GetVarInt(QByteArray* pagearray, quint64 pageoffset, uint varintlength);
     uint GetSerialType(uint serialtype);
