@@ -105,7 +105,6 @@ private slots:
     void SelectionChanged(void);
     void ContentSelect(void);
 
-    void ValueSelected(void);
     void TagMenu(const QPoint &point);
     void SetTag(void);
     void CreateNewTag(void);
@@ -147,17 +146,10 @@ private:
     void LoadPage(void);
     void ParseHeader(QByteArray* pageheader);
     void PopulateHeader(void);
-    void ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage);
+    void ParsePage(QByteArray* pagearray, quint8 filetype, quint64 curpage);
     uint GetVarIntLength(QByteArray* pagearray, quint64 pageoffset);
     uint GetVarInt(QByteArray* pagearray, quint64 pageoffset, uint varintlength);
     uint GetSerialType(uint serialtype);
-    // change ParsePageHeader to ParsePage
-    //void PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* curerr);
-    QString DecryptRot13(QString encstr);
-    QChar Rot13Char(QChar curchar);
-    QString ConvertUnixTimeToString(uint32_t input);
-    QString ConvertWindowsTimeToUnixTimeUTC(uint64_t input);
-    //int GetRootIndex(QTreeWidgetItem* curitem);
     QMenu* tagmenu;
     QAction* newtagaction;
     QAction* remtagaction;

@@ -98,11 +98,9 @@ void WombatSqlite::UpdatePreviewLinks()
         {
             if(taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(0) == tags.at(i))
             {
-                //qDebug() << "file:" << ui->treewidget->item(taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(1).split(",").at(0).toUInt())->text().split(" (").at(0);
                 QString filename = ui->treewidget->item(taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(1).split(",").at(0).toUInt())->text().split(" (").at(0);
                 QString pagetxt = "Page: " + taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(1).split(",").at(1);
                 QStringList contentlist = taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(2).split(";");
-                //qDebug() << "contentlist:" << contentlist;
                 curcontent += "<tr><td style='" + ReturnCssString(11) + "'>";
                 curcontent += "Is Live: " + contentlist.at(0) + "<br/>";
                 curcontent += "RowID: " + contentlist.at(1) + "<br/>";
@@ -117,33 +115,6 @@ void WombatSqlite::UpdatePreviewLinks()
         }
         curcontent += "</table></div><br/>\n";
     }
-    /*
-    for(int i=0; i < tags.count(); i++)
-    {
-        curcontent += "<div id='t" + QString::number(i) + "'><h3>" + tags.at(i) + "</h3><br/><table><tr>";
-        for(int j=0; j < taggeditems.count(); j++)
-        {
-            if(taggeditems.at(j).split("|", Qt::SkipEmptyParts).at(0) == tags.at(i))
-            {
-                curcontent += "<td style='" + ReturnCssString(11) + "'><a href='" + QDir::tempPath() + "/wr/tagged/" + QString::number(i) + "-" + QString::number(j) + ".html'>" + taggeditems.at(j).split("|").at(1) + "</a></td>";
-                QString htmlvalue = "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'></head><body style='" + ReturnCssString(0) + "'>";
-                htmlvalue += "<div style='" + ReturnCssString(1) + "'>Registry Analysis</div><br/>";
-                htmlvalue += "<pre>";
-                htmlvalue += taggeditems.at(j).split("|").at(2).toUtf8();
-                htmlvalue + "</pre><body></html>";
-                QFile htmlfile(QDir::tempPath() + "/wr/tagged/" + QString::number(i) + "-" + QString::number(j) + ".html");
-                if(!htmlfile.isOpen())
-                    htmlfile.open(QIODevice::WriteOnly | QIODevice::Text);
-                if(htmlfile.isOpen())
-                {
-                    htmlfile.write(htmlvalue.toStdString().c_str());
-                    htmlfile.close();
-                }
-            }
-        }
-        curcontent += "</tr></table></div><br/>\n";
-    }
-    */
     reportstring = prehtml + curcontent + psthtml;
     QFile indxfile(QDir::tempPath() + "/wsf/index.html");
     if(!indxfile.isOpen())
@@ -169,21 +140,7 @@ void WombatSqlite::PublishReport()
     QString savepath = QFileDialog::getExistingDirectory(this, tr("Select Report Folder"), QDir::homePath(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if(!savepath.isEmpty())
     {
-        // Make tagged path to store tagged registry files
-        //QDir tmppath;
-        //tmppath.mkpath(savepath + "/tagged/");
         QFile::copy(QDir::tempPath() + "/wsf/index.html", savepath + "/index.html");
-        /*
-        QDirIterator it(QString(QDir::tempPath() + "/wr/tagged"), QDirIterator::NoIteratorFlags);
-        while(it.hasNext())
-        {
-            QString curfile = it.next();
-            if(curfile.endsWith("html"))
-            {
-                QFile::copy(curfile, savepath + "/tagged/" + curfile.split("/").last());
-            }
-        }
-        */
     }
 }
 
@@ -217,9 +174,6 @@ void WombatSqlite::CreateNewTag()
 
     QString idvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(ui->tablewidget->currentRow());
     QString idcontent = ui->tablewidget->selectedItems().at(1)->text() + ";" + ui->tablewidget->selectedItems().at(2)->text() + ";" + ui->tablewidget->selectedItems().at(3)->text() + ";" + ui->tablewidget->selectedItems().at(4)->text() + ";" + ui->tablewidget->selectedItems().at(5)->text() + ";" + ui->hexedit->textCursor().selectedText() + ";" + ui->utf8edit->textCursor().selectedText();
-    //qDebug() << "tagname:" << tagname << "id value:" << idvalue;
-    //qDebug() << "content to save:" << ui->tablewidget->selectedItems().at(1)->text() << ui->tablewidget->selectedItems().at(2)->text() << ui->tablewidget->selectedItems().at(3)->text() << ui->tablewidget->selectedItems().at(4)->text() << ui->tablewidget->selectedItems().at(5)->text() << ui->hexedit->textCursor().selectedText() << ui->utf8edit->textCursor().selectedText();
-    //QString idkeyvalue = statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text();
     for(int i=0; i < taggeditems.count(); i++)
     {
         if(taggeditems.at(i).contains(idvalue))
@@ -227,7 +181,6 @@ void WombatSqlite::CreateNewTag()
     }
     // may want to store all the columns for the row here...
     taggeditems.append(tagname + "|" + idvalue + "|" + idcontent);
-    //taggeditems.append(tagname + "|" + statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text() + "|" + ui->plaintext->toPlainText());
 }
 
 void WombatSqlite::UpdateTagsMenu()
@@ -269,7 +222,6 @@ void WombatSqlite::SetTag()
     }
     // may want to store all the columns for the row here...
     taggeditems.append(tagaction->iconText() + "|" + idvalue + "|" + idcontent);
-    //taggeditems.append(tagaction->iconText() + "|" + statuslabel->text() + "\\" + ui->tablewidget->selectedItems().at(1)->text() + "|" + ui->plaintext->toPlainText());
     ui->tablewidget->selectedItems().first()->setText(tagaction->iconText());
 }
 
@@ -285,172 +237,6 @@ void WombatSqlite::RemoveTag()
     }
 }
 
-void WombatSqlite::ValueSelected(void)
-{
-    /*
-    if(ui->tablewidget->selectedItems().count() > 0)
-    {
-	QTreeWidgetItem* curitem = ui->treewidget->selectedItems().first();
-	int rootindex = GetRootIndex(curitem);
-	hivefilepath = hives.at(rootindex);
-	int valueindex = ui->tablewidget->selectedItems().at(1)->row();
-	QString keypath = statuslabel->text();
-	libregf_file_t* regfile = NULL;
-	libregf_error_t* regerr = NULL;
-	libregf_file_initialize(&regfile, &regerr);
-	libregf_file_open(regfile, hivefilepath.toStdString().c_str(), LIBREGF_OPEN_READ, &regerr);
-	libregf_key_t* curkey = NULL;
-	libregf_file_get_key_by_utf8_path(regfile, (uint8_t*)(keypath.toUtf8().data()), keypath.toUtf8().size(), &curkey, &regerr);
-	libregf_value_t* curval = NULL;
-	libregf_key_get_value(curkey, valueindex, &curval, &regerr);
-        uint64_t lastwritetime = 0;
-        libregf_key_get_last_written_time(curkey, &lastwritetime, &regerr);
-        QString valuedata = "Last Written Time:\t" + ConvertWindowsTimeToUnixTimeUTC(lastwritetime) + " UTC\n\n";
-	valuedata += "Name:\t" + ui->tablewidget->selectedItems().at(1)->text() + "\n\n";
-	if(ui->tablewidget->selectedItems().at(1)->text().contains("(unnamed)"))
-	{
-	    valuedata += "Content\n-------\n\n";
-	    valuedata += "Hex:\t0x" + ui->tablewidget->selectedItems().at(1)->text() + "\n";
-	    valuedata += "Integer:\t" + QString::number(ui->tablewidget->selectedItems().at(1)->text().toInt(nullptr, 16)) + "\n";
-	}
-	else
-	{
-            QString valuetype = ui->tablewidget->selectedItems().at(2)->text();
-            if(valuetype.contains("REG_SZ") || valuetype.contains("REG_EXPAND_SZ"))
-            {
-                valuedata += "Content:\t";
-                size_t strsize = 0;
-                libregf_value_get_value_utf8_string_size(curval, &strsize, &regerr);
-                uint8_t valstr[strsize];
-                libregf_value_get_value_utf8_string(curval, valstr, strsize, &regerr);
-                valuedata += QString::fromUtf8(reinterpret_cast<char*>(valstr));
-            }
-            else if(valuetype.contains("REG_BINARY"))
-            {
-                valuedata += "Content\n-------\n\n";
-                if(keypath.contains("UserAssist") && (keypath.contains("{750") || keypath.contains("{F4E") || keypath.contains("{5E6")))
-                {
-                    valuedata += "ROT13 Decrypted Content:\t";
-                    valuedata += DecryptRot13(ui->tablewidget->selectedItems().at(1)->text()) + "\n";
-                }
-                else if(keypath.contains("SAM") && ui->tablewidget->selectedItems().at(1)->text().count() == 1 && ui->tablewidget->selectedItems().at(1)->text().startsWith("F"))
-                {
-                    size_t datasize = 0;
-                    libregf_value_get_value_data_size(curval, &datasize, &regerr);
-                    uint8_t data[datasize];
-                    libregf_value_get_value_data(curval, data, datasize, &regerr);
-                    QByteArray farray = QByteArray::fromRawData((char*)data, datasize);
-                    valuedata += "Account Expiration:\t\t";
-                    if(farray.mid(32,1).toHex() == "ff")
-                    {
-                        valuedata += "No Expiration is Set\n";
-                    }
-                    else
-                        valuedata += ConvertWindowsTimeToUnixTimeUTC(qFromLittleEndian<uint64_t>(farray.mid(32, 8))) + " UTC\n";
-                    valuedata += "Last Logon Time:\t\t" + ConvertWindowsTimeToUnixTimeUTC(qFromLittleEndian<uint64_t>(farray.mid(8, 8))) + " UTC\n";
-                    valuedata += "Last Failed Login:\t\t" + ConvertWindowsTimeToUnixTimeUTC(qFromLittleEndian<uint64_t>(farray.mid(40, 8))) + " UTC\n";
-                    valuedata += "Last Time Password Changed:\t" + ConvertWindowsTimeToUnixTimeUTC(qFromLittleEndian<uint64_t>(farray.mid(24, 8))) + " UTC";
-                }
-                else if(ui->tablewidget->selectedItems().at(1)->text().startsWith("ShutdownTime"))
-                {
-                    size_t datasize = 0;
-                    libregf_value_get_value_data_size(curval, &datasize, &regerr);
-                    uint8_t data[datasize];
-                    libregf_value_get_value_data(curval, data, datasize, &regerr);
-                    QByteArray valarray = QByteArray::fromRawData((char*)data, datasize);
-                    valuedata += "Shutdown Time:\t" + ConvertWindowsTimeToUnixTimeUTC(qFromLittleEndian<uint64_t>(valarray)) + " UTC";
-                }
-            }
-            else if(valuetype.contains("REG_DWORD"))
-            {
-                valuedata += "Content:\t";
-                uint32_t dwordvalue = 0;
-                libregf_value_get_value_32bit(curval, &dwordvalue, &regerr);
-                if(ui->tablewidget->selectedItems().at(1)->text().toLower().contains("date"))
-                    valuedata += ConvertUnixTimeToString(dwordvalue);
-                else
-                    valuedata += QString::number(dwordvalue);
-            }
-            else if(valuetype.contains("REG_DWORD_BIG_ENDIAN"))
-            {
-                valuedata += "Content:\t";
-                uint32_t dwordvalue = 0;
-                libregf_value_get_value_32bit(curval, &dwordvalue, &regerr);
-                valuedata += QString::number(qFromBigEndian<uint32_t>(dwordvalue));
-            }
-            else if(valuetype.contains("REG_MULTI_SZ"))
-            {
-                valuedata += "Content\n";
-                valuedata += "-------\n";
-                libregf_multi_string_t* multistring = NULL;
-                libregf_value_get_value_multi_string(curval, &multistring, &regerr);
-                int strcnt = 0;
-                libregf_multi_string_get_number_of_strings(multistring, &strcnt, &regerr);
-                for(int i=0; i < strcnt; i++)
-                {
-                    size_t strsize = 0;
-                    libregf_multi_string_get_utf8_string_size(multistring, i, &strsize, &regerr);
-                    uint8_t valstr[strsize];
-                    libregf_multi_string_get_utf8_string(multistring, i, valstr, strsize, &regerr);
-                    valuedata += QString::fromUtf8(reinterpret_cast<char*>(valstr)) + "\n";
-                }
-                libregf_multi_string_free(&multistring, &regerr);
-            }
-            else if(valuetype.contains("REG_QWORD"))
-            {
-                valuedata += "Content:\t";
-                uint64_t qwordvalue = 0;
-                libregf_value_get_value_64bit(curval, &qwordvalue, &regerr);
-                valuedata += QString::number(qwordvalue);
-            }
-	}
-        size_t datasize = 0;
-        libregf_value_get_value_data_size(curval, &datasize, &regerr);
-        uint8_t data[datasize];
-        libregf_value_get_value_data(curval, data, datasize, &regerr);
-        QByteArray dataarray = QByteArray::fromRawData((char*)data, datasize);
-        valuedata += "\n\nBinary Content\n--------------\n\n";
-        int linecount = datasize / 16;
-        //int remainder = datasize % 16;
-        for(int i=0; i < linecount; i++)
-        {
-            valuedata += QString::number(i * 16, 16).rightJustified(8, '0') + "\t";
-            for(int j=0; j < 16; j++)
-            {
-                valuedata += QString("%1").arg(data[j+i*16], 2, 16, QChar('0')).toUpper() + " ";
-            }
-            for(int j=0; j < 16; j++)
-            {
-                if(!QChar(dataarray.at(j+i*16)).isPrint())
-                {
-                    valuedata += ".";
-                }
-                else
-                    valuedata += QString("%1").arg(dataarray.at(j+i*16));
-            }
-            valuedata += "\n";
-        }
-	ui->plaintext->setPlainText(valuedata);
-
-        libregf_value_free(&curval, &regerr);
-        libregf_key_free(&curkey, &regerr);
-        libregf_file_close(regfile, &regerr);
-        libregf_file_free(&regfile, &regerr);
-        libregf_error_free(&regerr);
-    }
-    */
-}
-
-/*
-int WombatSqlite::GetRootIndex(QTreeWidgetItem* curitem)
-{
-    if(ui->treewidget->indexOfTopLevelItem(curitem) == -1)
-	GetRootIndex(curitem->parent());
-    else
-	return ui->treewidget->indexOfTopLevelItem(curitem);
-}
-*/
-
 void WombatSqlite::PageChanged(int cpage)
 {
     if(ui->treewidget->currentItem() != NULL)
@@ -460,7 +246,6 @@ void WombatSqlite::PageChanged(int cpage)
         ui->tablewidget->clearContents();
         curpage = cpage;
         LoadPage();
-        //LoadRecords();
     }
 }
 
@@ -477,16 +262,9 @@ void WombatSqlite::FileSelected(QListWidgetItem* curitem)
     filetype = curitem->data(256).toUInt();
     pagesize = curitem->data(257).toUInt();
     curpage = curitem->data(258).toUInt();
-    //qDebug() << "curitem text:" << curitem->text();
-    //qDebug() << "curitem tag:" << curitem->toolTip();
-    //qDebug() << "file type:" << curitem->data(256).toUInt();
-    //qDebug() << "page size:" << curitem->data(257).toUInt();
-    //qDebug() << "current page:" << curitem->data(258).toUInt();
     ui->pagespinbox->setValue(curpage);
     ui->propwidget->setCurrentItem(NULL);
     LoadPage();
-    // need to implement this to parse the records within the page...
-    //LoadRecords();
 }
 
 void WombatSqlite::LoadPage()
@@ -510,7 +288,7 @@ void WombatSqlite::LoadPage()
         ParseHeader(&pghdrarray);
         PopulateHeader();
     }
-    ParsePageHeader(&pagearray, filetype, curpage);
+    ParsePage(&pagearray, filetype, curpage);
     QString offsetcontent = "";
     QString hexcontent = "";
     QString utf8content = "";
@@ -663,7 +441,7 @@ void WombatSqlite::PopulateHeader()
     ui->propwidget->resizeColumnToContents(2);
 }
 
-void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage)
+void WombatSqlite::ParsePage(QByteArray* pagearray, quint8 filetype, quint64 curpage)
 {
     quint64 curpos = 0;
     quint64 cellarrayoff = 0;
@@ -909,7 +687,8 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                     uint curstlen = GetVarIntLength(&serialarray, curserialtypelength);
                     uint curst = GetVarInt(&serialarray, curserialtypelength, curstlen);
                     curserialtypelength += curstlen;
-                    serialtypes.append(GetSerialType(curst));
+                    serialtypes.append(curst);
+                    //serialtypes.append(GetSerialType(curst));
                 }
                 if(i == 0)
                 {
@@ -1051,7 +830,8 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
                     uint curstlen = GetVarIntLength(&serialarray, curserialtypelength);
                     uint curst = GetVarInt(&serialarray, curserialtypelength, curstlen);
                     curserialtypelength += curstlen;
-                    serialtypes.append(GetSerialType(curst));
+                    serialtypes.append(curst);
+                    //serialtypes.append(GetSerialType(curst));
                 }
                 //qDebug() << "serialtypes:" << serialtypes;
                 if(i == 0)
@@ -1431,90 +1211,6 @@ void WombatSqlite::SelectionChanged()
         utf8cursor.setPosition(ui->hexedit->textCursor().selectionStart() / 3 + diff, QTextCursor::KeepAnchor);
     }
     ui->utf8edit->setTextCursor(utf8cursor);
-}
-
-/*
-void WombatSqlite::PopulateChildKeys(libregf_key_t* curkey, QTreeWidgetItem* curitem, libregf_error_t* regerr)
-{
-    int subkeycount = 0;
-    libregf_key_get_number_of_sub_keys(curkey, &subkeycount, &regerr);
-    if(subkeycount > 0)
-    {
-	for(int i=0; i < subkeycount; i++)
-	{
-	    libregf_key_t* cursubkey = NULL;
-	    libregf_key_get_sub_key(curkey, i, &cursubkey, &regerr);
-	    size_t namesize = 0;
-	    libregf_key_get_utf8_name_size(cursubkey, &namesize, &regerr);
-	    uint8_t name[namesize];
-	    libregf_key_get_utf8_name(cursubkey, name, namesize, &regerr);
-	    QTreeWidgetItem* subitem = new QTreeWidgetItem(curitem);
-	    subitem->setText(0, QString::fromUtf8(reinterpret_cast<char*>(name)));
-	    curitem->addChild(subitem);
-	    int subsubkeycount = 0;
-	    libregf_key_get_number_of_sub_keys(cursubkey, &subsubkeycount, &regerr);
-	    if(subsubkeycount > 0)
-	    {
-		PopulateChildKeys(cursubkey, subitem, regerr);
-	    }
-	    libregf_key_free(&cursubkey, &regerr);
-	}
-    }
-}
-*/
-
-QString WombatSqlite::DecryptRot13(QString encstr)
-{
-    QString decstr = "";
-    int i = 0;
-    int strlength = 0;
-    strlength = encstr.count();
-    decstr = encstr;
-    for(i = 0; i < strlength; i++)
-    {
-        decstr[i] = Rot13Char(decstr.at(i));
-    }
-    return decstr;
-}
-
-QChar WombatSqlite::Rot13Char(QChar curchar)
-{
-    QChar rot13char;
-    if('0' <= curchar && curchar <= '4')
-        rot13char = QChar(curchar.unicode() + 5);
-    else if('5' <= curchar && curchar <= '9')
-        rot13char = QChar(curchar.unicode() - 5);
-    else if('A' <= curchar && curchar <= 'M')
-        rot13char = QChar(curchar.unicode() + 13);
-    else if('N' <= curchar && curchar <= 'Z')
-        rot13char = QChar(curchar.unicode() - 13);
-    else if('a' <= curchar && curchar <= 'm')
-        rot13char = QChar(curchar.unicode() + 13);
-    else if('n' <= curchar && curchar <= 'z')
-        rot13char = QChar(curchar.unicode() - 13);
-    else
-        rot13char = curchar;
-    return rot13char;
-}
-
-QString WombatSqlite::ConvertUnixTimeToString(uint32_t input)
-{
-    time_t crtimet = (time_t)input;
-    QString timestr = QDateTime::fromSecsSinceEpoch(crtimet, QTimeZone::utc()).toString("MM/dd/yyyy hh:mm:ss AP");
-
-    return timestr;
-}
-
-QString WombatSqlite::ConvertWindowsTimeToUnixTimeUTC(uint64_t input)
-{
-    uint64_t temp;
-    temp = input / TICKS_PER_SECOND; //convert from 100ns intervals to seconds;
-    temp = temp - EPOCH_DIFFERENCE;  //subtract number of seconds between epochs
-    time_t crtimet = (time_t)temp;
-    QString timestr = "";
-    timestr = QDateTime::fromSecsSinceEpoch(crtimet, QTimeZone::utc()).toString("MM/dd/yyyy hh:mm:ss AP");
-
-    return timestr;
 }
 
 void WombatSqlite::TagMenu(const QPoint &pt)
