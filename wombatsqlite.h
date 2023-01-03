@@ -78,6 +78,16 @@ struct PageHeader
     quint32 rightmostpagenumber; // largest page number, right most pointer, interior page only [8, 4]
 };
 
+struct FrameHeader
+{
+    quint32 pagenumber; // pagenumber
+    quint32 pagecount; // size of db file in pages for commits or zero
+    quint32 salt1; // salt-1 from the wal header
+    quint32 salt2; // salt-2 from the wal header
+    quint32 checksum1; // checksum-1 cumulative checksum up through and including this page
+    quint32 checksum2; // checksum-2 second half of cumulative checksum
+};
+
 namespace Ui
 {
     class WombatSqlite;
@@ -167,6 +177,7 @@ private:
     WalHeader walheader;
     SqliteHeader sqliteheader;
     PageHeader pageheader;
+    FrameHeader frameheader;
 };
 
 #endif // WOMBATSQLITE_H

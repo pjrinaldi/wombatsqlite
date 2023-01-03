@@ -474,6 +474,13 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
     }
     if(filetype == 1) // WAL
     {
+        frameheader.pagenumber = qFromBigEndian<quint32>(pagearray->mid(curpos, 4));
+        frameheader.pagecount = qFromBigEndian<quint32>(pagearray->mid(curpos + 4, 4));
+        frameheader.salt1 = qFromBigEndian<quint32>(pagearray->mid(curpos + 8, 4));
+        frameheader.salt2 = qFromBigEndian<quint32>(pagearray->mid(curpos + 12, 4));
+        frameheader.checksum1 = qFromBigEndian<quint32>(pagearray->mid(curpos + 16, 4));
+        frameheader.checksum2 = qFromBigEndian<quint32>(pagearray->mid(curpos + 24, 4));
+        qDebug() << "frameheader:" << frameheader.pagenumber << frameheader.pagecount << frameheader.salt1 << frameheader.salt2 << frameheader.checksum1 << frameheader.checksum2;
     }
     else if(filetype == 2) // JOURNAL
     {
