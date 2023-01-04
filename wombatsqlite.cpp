@@ -481,6 +481,8 @@ void WombatSqlite::ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint
         frameheader.checksum1 = qFromBigEndian<quint32>(pagearray->mid(curpos + 16, 4));
         frameheader.checksum2 = qFromBigEndian<quint32>(pagearray->mid(curpos + 24, 4));
         qDebug() << "frameheader:" << frameheader.pagenumber << frameheader.pagecount << frameheader.salt1 << frameheader.salt2 << frameheader.checksum1 << frameheader.checksum2;
+        // AFTER THE FRAMEHEADER IS A PAGE, WHICH IS THE PAGESIZE OF THE DB PAGESIZE FROM THE FRAMEHEADER, SO I NEED TO REDO THE
+        // HEX DISPLAY AND PAGE DISPLAY FOR THE WAL FILES...
     }
     else if(filetype == 2) // JOURNAL
     {
