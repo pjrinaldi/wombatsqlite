@@ -27,13 +27,21 @@ class WombatSqlite : public FXMainWindow
 
     private:
         FXVerticalFrame* mainframe;
+        FXHorizontalFrame* topframe;
         FXSplitter* hsplitter;
         FXSplitter* vsplitter;
-        FXTreeList* treelist;
+        FXHorizontalFrame* editorframe;
+        FXList* sqlfilelist;
         FXToolBar* toolbar;
-        FXText* plaintext;
+        FXText* offsettext;
+        FXText* hextext;
+        FXText* asciitext;
+        FXScrollBar* editscrollbar;
+        FXLabel* pagelabel;
+        FXSpinner* pagespinner;
+        FXLabel* ofpagelabel;
+        FXTable* proplist;
         FXTable* tablelist;
-        FXTreeItem* rootitem;
 	FXIcon* openicon;
         FXButton* openbutton;
 	FXIcon* managetagsicon;

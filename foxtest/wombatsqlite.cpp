@@ -6,6 +6,7 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
 {
     mainframe = new FXVerticalFrame(this, LAYOUT_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y, 0, 0, 0, 0, 0, 0, 0, 0);
     toolbar = new FXToolBar(mainframe, this, LAYOUT_TOP|LAYOUT_LEFT);
+    topframe = new FXHorizontalFrame(mainframe, this, LAYOUT_TOP_LAYOUT_FILL_X);
     vsplitter = new FXSplitter(mainframe, SPLITTER_NORMAL|LAYOUT_FILL);
     statusbar = new FXStatusBar(mainframe, LAYOUT_BOTTOM|LAYOUT_LEFT|LAYOUT_FILL_X);
     treelist = new FXTreeList(vsplitter, this, ID_TREESELECT, TREELIST_SHOWS_LINES|TREELIST_SINGLESELECT|TREELIST_ROOT_BOXES|TREELIST_SHOWS_BOXES);
