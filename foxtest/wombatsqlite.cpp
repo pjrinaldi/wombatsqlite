@@ -23,10 +23,22 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     offsettext->setScrollStyle(VSCROLLER_NEVER|HSCROLLER_NEVER);
     hextext->setScrollStyle(VSCROLLER_NEVER|HSCROLLER_NEVER);
     asciitext->setScrollStyle(VSCROLLER_ALWAYS|HSCROLLER_NEVER);
+    plainfont = new FXFont(a, "monospace");
     //textscrollbar = new FXScrollBar(vsplitter2, this, ID_SCROLLBAR);
     sqlfilelist->setWidth(this->getWidth() / 4);
     //proplist->setWidth(this->getWidth() / 4);
-    tablelist->setHeight(this->getHeight() / 2);
+    //tablelist->setHeight(this->getHeight() / 4);
+    vsplitter2->setHeight(this->getHeight() / 2);
+    offsettext->setWidth(55);
+    offsettext->setFont(plainfont);
+    offsettext->setText("000000");
+    hextext->setFont(plainfont);
+    hextext->setWidth(390);
+    hextext->setText("00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff");
+    asciitext->setFont(plainfont);
+    asciitext->setWidth(150);
+    asciitext->setText("1234567890abcdef");
+    hsplitter->setWidth(offsettext->getWidth() + hextext->getWidth() + asciitext->getWidth() + 10);
     proplist->setRowHeaderWidth(0);
     tablelist->setRowHeaderWidth(0);
     proplist->setEditable(false);
@@ -36,12 +48,14 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     proplist->setColumnText(0, "Offset, Length");
     proplist->setColumnText(1, "Value");
     proplist->setColumnText(2, "Description");
+    proplist->setColumnHeaderHeight(proplist->getColumnHeaderHeight() + 5);
     tablelist->setColumnText(0, "Tag");
     tablelist->setColumnText(1, "Is Live");
     tablelist->setColumnText(2, "Row ID");
     tablelist->setColumnText(3, "Offset, Length");
     tablelist->setColumnText(4, "Type");
     tablelist->setColumnText(5, "Value");
+    tablelist->setColumnHeaderHeight(tablelist->getColumnHeaderHeight() + 5);
     /*
     treelist->setWidth(this->getWidth() / 4);
     hsplitter = new FXSplitter(vsplitter, SPLITTER_VERTICAL);
