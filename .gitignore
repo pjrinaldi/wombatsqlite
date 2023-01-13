@@ -5,3 +5,4 @@ Makefile.Release
 debug
 release
 *.o
+foxtest/wombatsqlite

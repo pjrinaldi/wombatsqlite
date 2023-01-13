@@ -37,7 +37,7 @@ class WombatSqlite : public FXMainWindow
         FXText* offsettext;
         FXText* hextext;
         FXText* asciitext;
-        FXScrollBar* textscrollbar;
+        //FXScrollBar* textscrollbar;
         FXLabel* pagelabel;
         FXSpinner* pagespinner;
         FXLabel* ofpagelabel;
