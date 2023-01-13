@@ -30,13 +30,14 @@ class WombatSqlite : public FXMainWindow
         FXHorizontalFrame* topframe;
         FXSplitter* hsplitter;
         FXSplitter* vsplitter;
+        FXSplitter* vsplitter2;
         FXHorizontalFrame* editorframe;
         FXList* sqlfilelist;
         FXToolBar* toolbar;
         FXText* offsettext;
         FXText* hextext;
         FXText* asciitext;
-        FXScrollBar* editscrollbar;
+        FXScrollBar* textscrollbar;
         FXLabel* pagelabel;
         FXSpinner* pagespinner;
         FXLabel* ofpagelabel;
@@ -81,6 +82,12 @@ class WombatSqlite : public FXMainWindow
             ID_SETTAG = 109,
             ID_REMTAG = 110,
             ID_PAGESPIN = 111,
+            ID_SQLLIST = 112,
+            ID_PROPTABLE = 113,
+            ID_OFFTEXT = 114,
+            ID_HEXTEXT = 115,
+            ID_ASCTEXT = 116,
+            ID_SCROLLBAR = 117,
             ID_LAST
         };
         WombatSqlite(FXApp* a);

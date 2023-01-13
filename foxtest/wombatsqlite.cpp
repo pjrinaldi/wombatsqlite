@@ -11,7 +11,16 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     pagespinner = new FXSpinner(topframe, 3, this, ID_PAGESPIN);
     ofpagelabel = new FXLabel(topframe, " of ");
     vsplitter = new FXSplitter(mainframe, SPLITTER_NORMAL|LAYOUT_FILL);
+    sqlfilelist = new FXList(vsplitter, this, ID_SQLLIST);
+    hsplitter = new FXSplitter(vsplitter, SPLITTER_VERTICAL);
+    proplist = new FXTable(vsplitter, this, ID_PROPTABLE, TABLE_COL_SIZABLE);
     statusbar = new FXStatusBar(mainframe, LAYOUT_BOTTOM|LAYOUT_LEFT|LAYOUT_FILL_X);
+    vsplitter2 = new FXSplitter(hsplitter, SPLITTER_NORMAL);
+    tablelist = new FXTable(hsplitter, this, ID_TABLESELECT, TABLE_COL_SIZABLE);
+    offsettext = new FXText(vsplitter2);
+    hextext = new FXText(vsplitter2);
+    asciitext = new FXText(vsplitter2);
+    textscrollbar = new FXScrollBar(vsplitter2, this, ID_SCROLLBAR);
     /*
     treelist = new FXTreeList(vsplitter, this, ID_TREESELECT, TREELIST_SHOWS_LINES|TREELIST_SINGLESELECT|TREELIST_ROOT_BOXES|TREELIST_SHOWS_BOXES);
     treelist->setWidth(this->getWidth() / 4);
