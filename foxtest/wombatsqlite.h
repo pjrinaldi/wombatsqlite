@@ -80,6 +80,7 @@ class WombatSqlite : public FXMainWindow
             ID_NEWTAG = 108,
             ID_SETTAG = 109,
             ID_REMTAG = 110,
+            ID_PAGESPIN = 111,
             ID_LAST
         };
         WombatSqlite(FXApp* a);

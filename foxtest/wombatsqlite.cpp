@@ -6,9 +6,13 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
 {
     mainframe = new FXVerticalFrame(this, LAYOUT_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y, 0, 0, 0, 0, 0, 0, 0, 0);
     toolbar = new FXToolBar(mainframe, this, LAYOUT_TOP|LAYOUT_LEFT);
-    topframe = new FXHorizontalFrame(mainframe, this, LAYOUT_TOP_LAYOUT_FILL_X);
+    topframe = new FXHorizontalFrame(mainframe, LAYOUT_TOP|LAYOUT_FILL_X);
+    pagelabel = new FXLabel(topframe, "Page: ");
+    pagespinner = new FXSpinner(topframe, 3, this, ID_PAGESPIN);
+    ofpagelabel = new FXLabel(topframe, " of ");
     vsplitter = new FXSplitter(mainframe, SPLITTER_NORMAL|LAYOUT_FILL);
     statusbar = new FXStatusBar(mainframe, LAYOUT_BOTTOM|LAYOUT_LEFT|LAYOUT_FILL_X);
+    /*
     treelist = new FXTreeList(vsplitter, this, ID_TREESELECT, TREELIST_SHOWS_LINES|TREELIST_SINGLESELECT|TREELIST_ROOT_BOXES|TREELIST_SHOWS_BOXES);
     treelist->setWidth(this->getWidth() / 4);
     hsplitter = new FXSplitter(vsplitter, SPLITTER_VERTICAL);
@@ -24,6 +28,7 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     tablelist->setColumnText(1, "Value Name");
     tablelist->setColumnText(2, "Value Type");
     tablelist->setColumnHeaderHeight(tablelist->getColumnHeaderHeight() + 5);
+    */
     openicon = new FXPNGIcon(this->getApp(), folderopen);
     openbutton = new FXButton(toolbar, "", openicon, this, ID_OPEN, BUTTON_TOOLBAR);
     managetagsicon = new FXPNGIcon(this->getApp(), managetags);
@@ -34,10 +39,12 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     publishbutton = new FXButton(toolbar, "", publishicon, this, ID_PUBLISH, BUTTON_TOOLBAR);
     abouticon = new FXPNGIcon(this->getApp(), helpcontents);
     aboutbutton = new FXButton(toolbar, "", abouticon, this, ID_ABOUT, BUTTON_TOOLBAR);
-    statusbar->getStatusLine()->setNormalText("Open a Hive File to Begin");
+    statusbar->getStatusLine()->setNormalText("Open a SQLite File to Begin");
+    /*
     hives.clear();
     tags.clear();
     taggedlist.clear();
+    */
 }
 
 void WombatSqlite::create()
@@ -729,6 +736,7 @@ void WombatSqlite::PopulateChildKeys(libregf_key_t* curkey, FXTreeItem* curitem,
 
 long WombatSqlite::SetTag(FXObject* sender, FXSelector, void*)
 {
+    /*
     FXString tagstr = ((FXMenuCommand*)sender)->getText();
     tablelist->setItemText(tablelist->getCurrentRow(), 0, tagstr);
     FXString idkeyvalue = statusbar->getStatusLine()->getText() + "\\" + tablelist->getItemText(tablelist->getCurrentRow(), 1);
@@ -738,7 +746,7 @@ long WombatSqlite::SetTag(FXObject* sender, FXSelector, void*)
             taggedlist.erase(i);
     }
     taggedlist.append(tagstr + "|" + idkeyvalue + "|" + plaintext->getText());
-
+    */
     return 1;
 }
 
