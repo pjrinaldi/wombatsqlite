@@ -700,7 +700,7 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
     if(prevsqlitepath.empty())
         prevsqlitepath = FXString(getenv("HOME")) + "/";
     sqlitefilepath = FXFileDialog::getOpenFilename(this, "Open SQLite File", prevsqlitepath);
-    std::cout << "sqlitefilepath: " << sqlitefilepath.text() << std::endl;
+    //std::cout << "sqlitefilepath: " << sqlitefilepath.text() << std::endl;
     if(!sqlitefilepath.empty())
     {
         prevsqlitepath = sqlitefilepath;
@@ -708,63 +708,61 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
         filetype = 0;
         std::ifstream filebuffer(sqlitefilepath.text(), std::ios::in|std::ios::binary);
         filebufptr = &filebuffer;
-        filebufptr->seekg(0);
         uint8_t* shdr = new uint8_t[4];
-        filebufptr->read((char*)shdr, 4);
-        uint32_t sqlheader = __builtin_bswap32((uint32_t)shdr[0] | (uint32_t)shdr[1] << 8 | (uint32_t)shdr[2] << 16 | (uint32_t)shdr[3] << 24);
+        uint32_t sqlheader = 0;
+        ReadContent(filebufptr, shdr, 0, 4);
+        ReturnUint32(&sqlheader, shdr);
         delete[] shdr;
+        //std::cout << "sql header:" << std::hex << sqlheader << std::endl;
         if(sqlheader == 0x377f0682 || sqlheader == 0x377f0683) // WAL
         {
             filetype == 1; // WAL
-            filebufptr->seekg(8);
-            uint8_t psize = new 
-            //char* psize = new char[4];
-            filebufptr->read(psize, 4);
-            //std::cout << "pagesize:" << (uint32_t)atoi(psize) << std::endl;
-        }
-        //for(int i=0; i < 4; i++)
-        //    std::cout << "sqlite header: " << std::hex << (uint)sqliteheader[i] << std::endl;
-        /*
-        std::ifstream filebuffer(hivefilepath.c_str(), std::ios::in|std::ios::binary);
-        filebufptr = &filebuffer;
-        filebufptr->seekg(0);
-        char* registryheader = new char[4];
-        filebufptr->read(registryheader, 4);
-        std::string regheadstr(registryheader);
-        delete[] registryheader;
-        */
-        /*
-    filetype = 0;
-    dbfile.seek(0);
-    uint32_t walheader = qFromBigEndian<uint32_t>(dbfile.read(4));
-    if(walheader == 0x377f0682 || walheader == 0x377f0683) // WAL
-    {
-        filetype = 1; // WAL
-        dbfile.seek(8);
-        pagesize = qFromBigEndian<quint32>(dbfile.read(4));
-    }
-    else
-    {
-        dbfile.seek(0);
-        quint64 journalheader = qFromBigEndian<quint64>(dbfile.read(8));
-        if(journalheader == 0xd9d505f920a163d7) // JOURNAL
-        {
-            filetype = 2; // JOURNAL
-            dbfile.seek(24);
-            pagesize = qFromBigEndian<quint32>(dbfile.read(4));
+            uint8_t* psize = new uint8_t[4];
+            pagesize = 0;
+            ReadContent(filebufptr, psize, 8, 4);
+            ReturnUint32(&pagesize, psize);
+            delete[] psize;
+            //std::cout << "page size:" << pagesize << std::endl;
         }
         else
         {
-            dbfile.seek(0);
-            QString sqliteheader = QString::fromStdString(dbfile.read(15).toStdString());
-            if(sqliteheader == "SQLite format 3") // SQLITE DB
+            uint8_t* jh = new uint8_t[8];
+            ReadContent(filebufptr, jh, 0, 8);
+            uint64_t journalheader = 0;
+            ReturnUint64(&journalheader, jh);
+            delete[] jh;
+            //std::cout << "journalheader: " << std::hex << journalheader << std::endl;
+            if(journalheader == 0xd9d505f920a163d7) // JOURNAL
             {
-                filetype = 3; // SQLITE DB
-                dbfile.seek(16);
-                pagesize = qFromBigEndian<quint16>(dbfile.read(2));
+                filetype = 2; // JOURNAL
+                uint8_t* ps = new uint8_t[4];
+                pagesize = 0;
+                ReadContent(filebufptr, ps, 24, 4);
+                ReturnUint32(&pagesize, ps);
+                delete[] ps;
+                std::cout << "page size:" << pagesize << std::endl;
+            }
+            else
+            {
+                char* sqliteheader = new char[15];
+                filebufptr->seekg(0);
+                filebufptr->read(sqliteheader, 15);
+                //ReadContent(filebufptr, sqliteheader, 0, 15);
+                if(FXString(sqliteheader) == "SQLite format 3") // SQLITE DB
+                {
+                    filetype = 3; // SQLITE DB
+                    uint8_t* ps = new uint8_t[2];
+                    pagesize = 0;
+                    uint16_t ps16 = 0;
+                    ReadContent(filebufptr, ps, 16, 2);
+                    ReturnUint16(&ps16, ps);
+                    delete[] ps;
+                    pagesize = ps16;
+                    std::cout << "pagesize: " << pagesize << std::endl;
+                }
             }
         }
-    }
+        /*
     if(filetype > 0)
     {
         pagecount = dbfile.size() / pagesize;
