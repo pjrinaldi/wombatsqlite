@@ -700,10 +700,39 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
     if(prevsqlitepath.empty())
         prevsqlitepath = FXString(getenv("HOME")) + "/";
     sqlitefilepath = FXFileDialog::getOpenFilename(this, "Open SQLite File", prevsqlitepath);
+    std::cout << "sqlitefilepath: " << sqlitefilepath.text() << std::endl;
     if(!sqlitefilepath.empty())
     {
         prevsqlitepath = sqlitefilepath;
         sqlitefiles.append(sqlitefilepath);
+        filetype = 0;
+        std::ifstream filebuffer(sqlitefilepath.text(), std::ios::in|std::ios::binary);
+        filebufptr = &filebuffer;
+        filebufptr->seekg(0);
+        uint8_t* shdr = new uint8_t[4];
+        filebufptr->read((char*)shdr, 4);
+        uint32_t sqlheader = __builtin_bswap32((uint32_t)shdr[0] | (uint32_t)shdr[1] << 8 | (uint32_t)shdr[2] << 16 | (uint32_t)shdr[3] << 24);
+        delete[] shdr;
+        if(sqlheader == 0x377f0682 || sqlheader == 0x377f0683) // WAL
+        {
+            filetype == 1; // WAL
+            filebufptr->seekg(8);
+            uint8_t psize = new 
+            //char* psize = new char[4];
+            filebufptr->read(psize, 4);
+            //std::cout << "pagesize:" << (uint32_t)atoi(psize) << std::endl;
+        }
+        //for(int i=0; i < 4; i++)
+        //    std::cout << "sqlite header: " << std::hex << (uint)sqliteheader[i] << std::endl;
+        /*
+        std::ifstream filebuffer(hivefilepath.c_str(), std::ios::in|std::ios::binary);
+        filebufptr = &filebuffer;
+        filebufptr->seekg(0);
+        char* registryheader = new char[4];
+        filebufptr->read(registryheader, 4);
+        std::string regheadstr(registryheader);
+        delete[] registryheader;
+        */
         /*
     filetype = 0;
     dbfile.seek(0);
@@ -738,19 +767,14 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
     }
     if(filetype > 0)
     {
-        // to get the file where it needs to go, i need the file type, file path to load, page size, current page, page count
-        // file path is in tooltip, page count is in text, so i need to put filetype, page size and current page in userrole
         pagecount = dbfile.size() / pagesize;
-        //qDebug() << "pagesize: " << pagesize << "File size: " << dbfile.size() << "page count:" << pagecount;
         QListWidgetItem* rootitem = new QListWidgetItem(ui->treewidget);
         rootitem->setText(dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
         rootitem->setToolTip(dbpath);
         rootitem->setData(256, QVariant(filetype)); // file type
         rootitem->setData(257, QVariant(pagesize)); // page size
         rootitem->setData(258, QVariant(1)); // current page
-        //rootitem->setToolTip(dbpath + "," + QString::number(filetype));
         ui->treewidget->addItem(rootitem);
-        //ui->treewidget->addTopLevelItem(rootitem);
         ui->pagespinbox->setMaximum(pagecount);
         ui->countlabel->setText("of " + QString::number(pagecount) + " pages");
         StatusUpdate("SQLite File: " + dbpath + " successfully opened.");
