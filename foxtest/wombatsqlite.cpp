@@ -83,6 +83,8 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     abouticon = new FXPNGIcon(this->getApp(), helpcontents);
     aboutbutton = new FXButton(toolbar, "", abouticon, this, ID_ABOUT, BUTTON_TOOLBAR);
     statusbar->getStatusLine()->setNormalText("Open a SQLite File to Begin");
+    fileuserdatalist.clear();
+    sqlitefiles.clear();
     /*
     hives.clear();
     tags.clear();
@@ -704,10 +706,12 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
     if(!sqlitefilepath.empty())
     {
         prevsqlitepath = sqlitefilepath;
-        sqlitefiles.append(sqlitefilepath);
         filetype = 0;
         std::ifstream filebuffer(sqlitefilepath.text(), std::ios::in|std::ios::binary);
         filebufptr = &filebuffer;
+        filebufptr->seekg(0, filebuffer.end);
+        filesize = filebufptr->tellg();
+        filebufptr->seekg(0, filebuffer.beg);
         uint8_t* shdr = new uint8_t[4];
         uint32_t sqlheader = 0;
         ReadContent(filebufptr, shdr, 0, 4);
@@ -740,7 +744,7 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
                 ReadContent(filebufptr, ps, 24, 4);
                 ReturnUint32(&pagesize, ps);
                 delete[] ps;
-                std::cout << "page size:" << pagesize << std::endl;
+                //std::cout << "page size:" << pagesize << std::endl;
             }
             else
             {
@@ -758,10 +762,22 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
                     ReturnUint16(&ps16, ps);
                     delete[] ps;
                     pagesize = ps16;
-                    std::cout << "pagesize: " << pagesize << std::endl;
+                    //std::cout << "pagesize: " << pagesize << std::endl;
                 }
             }
         }
+        if(filetype > 0)
+        {
+            sqlitefiles.append(sqlitefilepath);
+            pagecount = filesize / pagesize;
+            //std::cout << "page count:" << pagecount << std::endl;
+            int found = sqlitefilepath.find_last_of("/");
+            FXString itemstring = sqlitefilepath.right(sqlitefilepath.length() - found - 1) + " (" + sqlitefilepath.left(found+1) + ")";
+            FXListItem* rootitem = new FXListItem(itemstring);
+            sqlfilelist->appendItem(rootitem);
+        }
+        else
+            StatusUpdate("Not a SQLite file, file not opened.");
         /*
     if(filetype > 0)
     {
@@ -779,33 +795,10 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
         ui->treewidget->setCurrentRow(ui->treewidget->count() - 1);
         emit(ui->treewidget->itemClicked(ui->treewidget->item(ui->treewidget->count() -1)));
     }
-    else
-        StatusUpdate("Not a SQLite file, file not opened.");
-
          */ 
     }
     /*
-        std::ifstream filebuffer(hivefilepath.c_str(), std::ios::in|std::ios::binary);
-        filebufptr = &filebuffer;
-        filebufptr->seekg(0);
-        char* registryheader = new char[4];
-        filebufptr->read(registryheader, 4);
-        std::string regheadstr(registryheader);
-        delete[] registryheader;
-        if(regheadstr.find("regf") != std::string::npos) // win nt reg file
-        {
-            filebuffer.close();
-            libregf_file_t* regfile = NULL;
-            libregf_error_t* regerr = NULL;
-            libregf_file_initialize(&regfile, &regerr);
-            libregf_file_open(regfile, hivefilepath.c_str(), LIBREGF_OPEN_READ, &regerr);
-            libregf_error_fprint(regerr, stderr);
-            libregf_key_t* rootkey = NULL;
-            libregf_file_get_root_key(regfile, &rootkey, &regerr);
-            libregf_error_fprint(regerr, stderr);
             int rootsubkeycnt = 0;
-            libregf_key_get_number_of_sub_keys(rootkey, &rootsubkeycnt, &regerr);
-            libregf_error_fprint(regerr, stderr);
             std::size_t rfound = hivefilepath.rfind("/");
             std::string hivefilename = hivefilepath.substr(rfound+1);
             FXString rootitemstring(std::string(hivefilename + " (" + hivefilepath + ")").c_str());
@@ -813,10 +806,6 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
             treelist->appendItem(0, rootitem);
 	    PopulateChildKeys(rootkey, rootitem, regerr);
 	    treelist->expandTree(rootitem);
-	    libregf_key_free(&rootkey, &regerr);
-	    libregf_file_close(regfile, &regerr);
-	    libregf_file_free(&regfile, &regerr);
-	    libregf_error_free(&regerr);
         }
         else
             std::cout << "check failed..." << std::endl;
