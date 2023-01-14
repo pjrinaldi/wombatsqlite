@@ -21,6 +21,71 @@
 #define EPOCH_DIFFERENCE 11644473600LL
 #define NSEC_BTWN_1904_1970	(uint32_t) 2082844800U
 
+struct WalHeader
+{
+    uint32_t header; // = qFromBigEndian<uint32_t>(pageheader->mid(0, 4));
+    uint32_t fileversion; // = qFromBigEndian<uint32_t>(pageheader->mid(4, 4));
+    uint32_t pagesize; // = qFromBigEndian<uint32_t>(pageheader->mid(8, 4));
+    uint32_t checkptseqnum; // = qFromBigEndian<uint32_t>(pageheader->mid(12, 4));
+    uint32_t salt1; // = qFromBigEndian<uint32_t>(pageheader->mid(16, 4));
+    uint32_t salt2; // = qFromBigEndian<uint32_t>(pageheader->mid(20, 4));
+    uint32_t checksum1; // = qFromBigEndian<uint32_t>(pageheader->mid(24, 4));
+    uint32_t checksum2; // = qFromBigEndian<uint32_t>(pageheader->mid(28, 4));
+};
+
+struct JournalHeader
+{
+    uint64_t header; //= qFromBigEndian<uint64_t>(pageheader->mid(0, 8));
+    uint32_t pagecnt; // = qFromBigEndian<uint32_t>(pageheader->mid(8, 4));
+    uint32_t randomnonce; // = qFromBigEndian<uint32_t>(pageheader->mid(12, 4));
+    uint32_t initsize; // = qFromBigEndian<uint32_t>(pageheader->mid(16, 4));
+    uint32_t sectorsize; // = qFromBigEndian<uint32_t>(pageheader->mid(20, 4));
+    uint32_t pagesize; // = qFromBigEndian<uint32_t>(pageheader->mid(24, 4));
+};
+
+struct SqliteHeader
+{
+    FXString header; // = FXString::fromStdString(pageheader->mid(0, 16).toStdString());
+    uint16_t pagesize; // = qFromBigEndian<uint16_t>(pageheader->mid(16, 2));
+    uint8_t writeversion; // = qFromBigEndian<uint8_t>(pageheader->mid(18, 1));
+    uint8_t readversion; // = qFromBigEndian<uint8_t>(pageheader->mid(19, 1));
+    uint8_t unusedpagespace; // = qFromBigEndian<uint8_t>(pageheader->mid(20, 1));
+    uint32_t pagecount; // = qFromBigEndian<uint32_t>(pageheader->mid(28, 4));
+    uint32_t firstfreepagenum; // = qFromBigEndian<uint32_t>(pageheader->mid(32, 4));
+    uint32_t freepagescount; // 36, 4
+    uint32_t schemacookie; // 40, 4
+    uint32_t schemaformat; // 44, 4 - 1,2,3,4
+    uint32_t pagecachesize; // 48, 4
+    uint32_t largestrootbtreepagenumber; // 52, 4 - or zero
+    uint32_t textencoding; // 56, 4 - 1 utf-8, 2 utf-16le, 3 utf-16be
+    uint32_t userversion; // 60, 4
+    uint32_t incrementalvacuummodebool; // 64, 4 - 0 = false, otherwise true
+    uint32_t appid; // 68, 4
+    char reserved[20]; // 72, 20
+    uint32_t versionvalidfornum; // 92, 4
+    uint32_t version; // 96, 4
+};
+
+struct PageHeader
+{
+    uint8_t type; // page type 0x02 - index interior (12) | 0x05 - table interior (12) | 0x0a - index leaf (8) | 0x0d - table leaf (8) [0,1]
+    uint16_t firstfreeblock; // start of first free block on hte page or zero for no free blocks [1, 2]
+    uint16_t cellcount; // number of cells on the page [3, 2]
+    uint16_t cellcontentstart; // start of cell content area, zero represents 65536 [5, 2]
+    uint8_t fragmentedfreebytescount; // number of fragmented free bytes within cell content area [7, 1]
+    uint32_t rightmostpagenumber; // largest page number, right most pointer, interior page only [8, 4]
+};
+
+struct FrameHeader
+{
+    uint32_t pagenumber; // pagenumber
+    uint32_t pagecount; // size of db file in pages for commits or zero
+    uint32_t salt1; // salt-1 from the wal header
+    uint32_t salt2; // salt-2 from the wal header
+    uint32_t checksum1; // checksum-1 cumulative checksum up through and including this page
+    uint32_t checksum2; // checksum-2 second half of cumulative checksum
+};
+
 class WombatSqlite : public FXMainWindow
 {
     FXDECLARE(WombatSqlite)
@@ -55,13 +120,17 @@ class WombatSqlite : public FXMainWindow
 	FXButton* aboutbutton;
         FXStatusBar* statusbar;
         FXFont* plainfont;
-        std::string prevhivepath;
-        std::string hivefilepath;
-        std::vector<std::filesystem::path> hives;
+        FXString prevsqlitepath;
+        FXString sqlitefilepath;
+        FXArray<FXString> sqlitefiles;
         std::vector<std::string> tags;
         FXArray<FXString> taggedlist;
         std::ifstream* filebufptr;
         Viewer* viewer;
+        uint8_t filetype = 0;
+        uint64_t pagecount = 0;
+        uint32_t pagesize = 0;
+        uint64_t curpage = 0;
 
     protected:
         WombatSqlite() {}
@@ -91,7 +160,7 @@ class WombatSqlite : public FXMainWindow
             ID_LAST
         };
         WombatSqlite(FXApp* a);
-        long OpenHive(FXObject*, FXSelector, void*);
+        long OpenSqliteFile(FXObject*, FXSelector, void*);
         long OpenTagManager(FXObject*, FXSelector, void*);
 	long OpenAboutBox(FXObject*, FXSelector, void*);
         long KeySelected(FXObject*, FXSelector, void*);
@@ -118,7 +187,7 @@ class WombatSqlite : public FXMainWindow
 
 FXDEFMAP(WombatSqlite) WombatSqliteMap[]={
     FXMAPFUNC(SEL_CLICKED, WombatSqlite::ID_TREESELECT, WombatSqlite::KeySelected),
-    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_OPEN, WombatSqlite::OpenHive),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_OPEN, WombatSqlite::OpenSqliteFile),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_MANAGETAGS, WombatSqlite::OpenTagManager),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_ABOUT, WombatSqlite::OpenAboutBox),
     FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_TABLESELECT, WombatSqlite::ValueSelected),

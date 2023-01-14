@@ -695,17 +695,74 @@ long WombatSqlite::PublishReport(FXObject*, FXSelector, void*)
     return 1;
 }
 
-long WombatSqlite::OpenHive(FXObject*, FXSelector, void*)
+long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
 {
-    /*
-    if(prevhivepath.empty())
-        prevhivepath = getenv("HOME") + std::string("/");
-    FXString filename = FXFileDialog::getOpenFilename(this, "Open Hive", prevhivepath.c_str());
-    if(!filename.empty())
+    if(prevsqlitepath.empty())
+        prevsqlitepath = FXString(getenv("HOME")) + "/";
+    sqlitefilepath = FXFileDialog::getOpenFilename(this, "Open SQLite File", prevsqlitepath);
+    if(!sqlitefilepath.empty())
     {
-        hivefilepath = filename.text();
-        prevhivepath = hivefilepath;
-        hives.push_back(std::filesystem::canonical(hivefilepath));
+        prevsqlitepath = sqlitefilepath;
+        sqlitefiles.append(sqlitefilepath);
+        /*
+    filetype = 0;
+    dbfile.seek(0);
+    uint32_t walheader = qFromBigEndian<uint32_t>(dbfile.read(4));
+    if(walheader == 0x377f0682 || walheader == 0x377f0683) // WAL
+    {
+        filetype = 1; // WAL
+        dbfile.seek(8);
+        pagesize = qFromBigEndian<quint32>(dbfile.read(4));
+    }
+    else
+    {
+        dbfile.seek(0);
+        quint64 journalheader = qFromBigEndian<quint64>(dbfile.read(8));
+        if(journalheader == 0xd9d505f920a163d7) // JOURNAL
+        {
+            filetype = 2; // JOURNAL
+            dbfile.seek(24);
+            pagesize = qFromBigEndian<quint32>(dbfile.read(4));
+        }
+        else
+        {
+            dbfile.seek(0);
+            QString sqliteheader = QString::fromStdString(dbfile.read(15).toStdString());
+            if(sqliteheader == "SQLite format 3") // SQLITE DB
+            {
+                filetype = 3; // SQLITE DB
+                dbfile.seek(16);
+                pagesize = qFromBigEndian<quint16>(dbfile.read(2));
+            }
+        }
+    }
+    if(filetype > 0)
+    {
+        // to get the file where it needs to go, i need the file type, file path to load, page size, current page, page count
+        // file path is in tooltip, page count is in text, so i need to put filetype, page size and current page in userrole
+        pagecount = dbfile.size() / pagesize;
+        //qDebug() << "pagesize: " << pagesize << "File size: " << dbfile.size() << "page count:" << pagecount;
+        QListWidgetItem* rootitem = new QListWidgetItem(ui->treewidget);
+        rootitem->setText(dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
+        rootitem->setToolTip(dbpath);
+        rootitem->setData(256, QVariant(filetype)); // file type
+        rootitem->setData(257, QVariant(pagesize)); // page size
+        rootitem->setData(258, QVariant(1)); // current page
+        //rootitem->setToolTip(dbpath + "," + QString::number(filetype));
+        ui->treewidget->addItem(rootitem);
+        //ui->treewidget->addTopLevelItem(rootitem);
+        ui->pagespinbox->setMaximum(pagecount);
+        ui->countlabel->setText("of " + QString::number(pagecount) + " pages");
+        StatusUpdate("SQLite File: " + dbpath + " successfully opened.");
+        ui->treewidget->setCurrentRow(ui->treewidget->count() - 1);
+        emit(ui->treewidget->itemClicked(ui->treewidget->item(ui->treewidget->count() -1)));
+    }
+    else
+        StatusUpdate("Not a SQLite file, file not opened.");
+
+         */ 
+    }
+    /*
         std::ifstream filebuffer(hivefilepath.c_str(), std::ios::in|std::ios::binary);
         filebufptr = &filebuffer;
         filebufptr->seekg(0);
