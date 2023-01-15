@@ -123,6 +123,7 @@ class WombatSqlite : public FXMainWindow
         FXFont* plainfont;
         FXString prevsqlitepath;
         FXString sqlitefilepath;
+        FXString curfilepath;
         FXArray<FXString> sqlitefiles;
         std::vector<std::string> tags;
         FXArray<FXString> taggedlist;
@@ -174,6 +175,7 @@ class WombatSqlite : public FXMainWindow
         long RemoveTag(FXObject*, FXSelector, void*);
         long PreviewReport(FXObject*, FXSelector, void*);
         long PublishReport(FXObject*, FXSelector, void*);
+        long FileSelected(FXObject*, FXSelector, void*);
 	//void PopulateChildKeys(libregf_key_t* curkey, FXTreeItem* curitem, libregf_error_t* regerr);
 	void GetRootString(FXTreeItem* curitem, FXString* rootstring);
 	FXString ConvertWindowsTimeToUnixTimeUTC(uint64_t input);
@@ -189,17 +191,18 @@ class WombatSqlite : public FXMainWindow
 };
 
 FXDEFMAP(WombatSqlite) WombatSqliteMap[]={
-    FXMAPFUNC(SEL_CLICKED, WombatSqlite::ID_TREESELECT, WombatSqlite::KeySelected),
+    //FXMAPFUNC(SEL_CLICKED, WombatSqlite::ID_TREESELECT, WombatSqlite::KeySelected),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_OPEN, WombatSqlite::OpenSqliteFile),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_MANAGETAGS, WombatSqlite::OpenTagManager),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_ABOUT, WombatSqlite::OpenAboutBox),
-    FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_TABLESELECT, WombatSqlite::ValueSelected),
+    //FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_TABLESELECT, WombatSqlite::ValueSelected),
     FXMAPFUNC(SEL_RIGHTBUTTONRELEASE, WombatSqlite::ID_TABLESELECT, WombatSqlite::TagMenu),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_NEWTAG, WombatSqlite::CreateNewTag),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_SETTAG, WombatSqlite::SetTag),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_REMTAG, WombatSqlite::RemoveTag),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PREVIEW, WombatSqlite::PreviewReport),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PUBLISH, WombatSqlite::PublishReport),
+    FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_SQLLIST, WombatSqlite::FileSelected),
 };
 
 #endif // WOMBATSQLITE_H

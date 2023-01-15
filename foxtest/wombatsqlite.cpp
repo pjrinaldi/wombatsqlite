@@ -772,45 +772,41 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
             pagecount = filesize / pagesize;
             //std::cout << "page count:" << pagecount << std::endl;
             int found = sqlitefilepath.find_last_of("/");
-            FXString itemstring = sqlitefilepath.right(sqlitefilepath.length() - found - 1) + " (" + sqlitefilepath.left(found+1) + ")";
+            FXString itemstring = sqlitefilepath.right(sqlitefilepath.length() - found - 1) + " (" + FXString::value(pagecount) + ") [" + sqlitefilepath.left(found+1) + "]";
             FXListItem* rootitem = new FXListItem(itemstring);
             sqlfilelist->appendItem(rootitem);
+            pagespinner->setRange(1, pagecount);
+            pagespinner->setValue(1);
+            ofpagelabel->setText(" of " + FXString::value(pagecount) + " pages");
+            StatusUpdate("SQLite File: " + sqlitefilepath + " successfully opened.");
+            //sqlfilelist->setCurrentItem(sqlfilelist->getNumItems() - 1);
+            sqlfilelist->selectItem(sqlfilelist->getNumItems() - 1);
         }
         else
             StatusUpdate("Not a SQLite file, file not opened.");
         /*
-    if(filetype > 0)
-    {
-        pagecount = dbfile.size() / pagesize;
-        QListWidgetItem* rootitem = new QListWidgetItem(ui->treewidget);
-        rootitem->setText(dbpath.split("/").last() + " (" + QString::number(pagecount) + ")");
         rootitem->setToolTip(dbpath);
         rootitem->setData(256, QVariant(filetype)); // file type
         rootitem->setData(257, QVariant(pagesize)); // page size
         rootitem->setData(258, QVariant(1)); // current page
-        ui->treewidget->addItem(rootitem);
-        ui->pagespinbox->setMaximum(pagecount);
-        ui->countlabel->setText("of " + QString::number(pagecount) + " pages");
-        StatusUpdate("SQLite File: " + dbpath + " successfully opened.");
-        ui->treewidget->setCurrentRow(ui->treewidget->count() - 1);
-        emit(ui->treewidget->itemClicked(ui->treewidget->item(ui->treewidget->count() -1)));
-    }
          */ 
     }
+    return 1;
+}
+
+long WombatSqlite::FileSelected(FXObject*, FXSelector, void*)
+{
+    curfilepath = sqlfilelist->getItemText(sqlfilelist->getCurrentItem());
+    std::cout << curfilepath.text() << std::endl;
     /*
-            int rootsubkeycnt = 0;
-            std::size_t rfound = hivefilepath.rfind("/");
-            std::string hivefilename = hivefilepath.substr(rfound+1);
-            FXString rootitemstring(std::string(hivefilename + " (" + hivefilepath + ")").c_str());
-            rootitem = new FXTreeItem(rootitemstring);
-            treelist->appendItem(0, rootitem);
-	    PopulateChildKeys(rootkey, rootitem, regerr);
-	    treelist->expandTree(rootitem);
-        }
-        else
-            std::cout << "check failed..." << std::endl;
-    }
-    */
+    curfilepath = curitem->toolTip();
+    filetype = curitem->data(256).toUInt();
+    pagesize = curitem->data(257).toUInt();
+    curpage = curitem->data(258).toUInt();
+    ui->pagespinbox->setValue(curpage);
+    ui->propwidget->setCurrentItem(NULL);
+    LoadPage();
+     */ 
     return 1;
 }
 
