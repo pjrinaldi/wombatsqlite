@@ -83,13 +83,10 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     abouticon = new FXPNGIcon(this->getApp(), helpcontents);
     aboutbutton = new FXButton(toolbar, "", abouticon, this, ID_ABOUT, BUTTON_TOOLBAR);
     statusbar->getStatusLine()->setNormalText("Open a SQLite File to Begin");
-    fileuserdatalist.clear();
+    fileuserdata.clear();
     sqlitefiles.clear();
-    /*
-    hives.clear();
     tags.clear();
     taggedlist.clear();
-    */
 }
 
 void WombatSqlite::create()
@@ -779,31 +776,40 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
             pagespinner->setValue(1);
             ofpagelabel->setText(" of " + FXString::value(pagecount) + " pages");
             StatusUpdate("SQLite File: " + sqlitefilepath + " successfully opened.");
-            //sqlfilelist->setCurrentItem(sqlfilelist->getNumItems() - 1);
+            // CURRENT ITEM INDEX(FILETYPE|PAGESIZE|CURPAGE)
+            fileuserdata.append(FXString::value(filetype) + "|" + FXString::value(pagesize) + "|" + FXString::value(1));
+            //std::cout << "filetype: " << FXString::value(filetype).text() << std::endl;
             // MAY NOT WANT TO SET SELECTED, SINCE IT DOESN'T SEEM TO TRIGGER THE FILESELECTED FUNCTION
-            sqlfilelist->selectItem(sqlfilelist->getNumItems() - 1);
+            //sqlfilelist->selectItem(sqlfilelist->getNumItems() - 1);
         }
         else
             StatusUpdate("Not a SQLite file, file not opened.");
-        /*
-        rootitem->setToolTip(dbpath);
-        rootitem->setData(256, QVariant(filetype)); // file type
-        rootitem->setData(257, QVariant(pagesize)); // page size
-        rootitem->setData(258, QVariant(1)); // current page
-         */ 
     }
     return 1;
 }
 
 long WombatSqlite::FileSelected(FXObject*, FXSelector, void*)
 {
-    curfilepath = sqlfilelist->getItemText(sqlfilelist->getCurrentItem());
-    std::cout << curfilepath.text() << std::endl;
+    FXString tmpstr = sqlfilelist->getItemText(sqlfilelist->getCurrentItem());
+    curfileuserdata = fileuserdata.at(sqlfilelist->getCurrentItem());
+    //std::cout << "cur file user data: " << curfileuserdata.text() << std::endl;
+    int found = tmpstr.find(" (");
+    int lfound = tmpstr.find("[");
+    int rfound = tmpstr.find("]");
+    curfilepath = tmpstr.mid(lfound+1, rfound-1) + tmpstr.mid(0, found);
+    //std::cout << tmpstr.mid(0, found).text() << std::endl;
+    //std::cout << tmpstr.mid(lfound+1, rfound-1).text() << std::endl;
+    //std::cout << curfilepath.text() << std::endl;
+    //std::cout << curfileuserdata.text() << std::endl;
+    lfound = curfileuserdata.find_first_of("|");
+    rfound = curfileuserdata.find_last_of("|");
+    filetype = (uint8_t)curfileuserdata.mid(0, lfound).at(0);
+    pagesize = curfileuserdata.mid(lfound+1, rfound-1).toULong();
+    curpage = curfileuserdata.mid(rfound+1, curfileuserdata.length() - rfound - 1).toULong();
+    pagespinner->setValue(curpage);
+    //std::cout << curfileuserdata.mid(0, lfound).text() << std::endl;
+    //std::cout << filetype << " " << pagesize << " " << curpage << std::endl;
     /*
-    curfilepath = curitem->toolTip();
-    filetype = curitem->data(256).toUInt();
-    pagesize = curitem->data(257).toUInt();
-    curpage = curitem->data(258).toUInt();
     ui->pagespinbox->setValue(curpage);
     ui->propwidget->setCurrentItem(NULL);
     LoadPage();

@@ -128,7 +128,8 @@ class WombatSqlite : public FXMainWindow
         std::vector<std::string> tags;
         FXArray<FXString> taggedlist;
         std::ifstream* filebufptr;
-        FXArray<FXString> fileuserdatalist;
+        FXArray<FXString> fileuserdata;
+        FXString curfileuserdata;
         Viewer* viewer;
         uint8_t filetype = 0;
         uint64_t filesize = 0;
