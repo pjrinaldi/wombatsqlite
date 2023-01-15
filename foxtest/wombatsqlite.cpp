@@ -780,6 +780,7 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
             ofpagelabel->setText(" of " + FXString::value(pagecount) + " pages");
             StatusUpdate("SQLite File: " + sqlitefilepath + " successfully opened.");
             //sqlfilelist->setCurrentItem(sqlfilelist->getNumItems() - 1);
+            // MAY NOT WANT TO SET SELECTED, SINCE IT DOESN'T SEEM TO TRIGGER THE FILESELECTED FUNCTION
             sqlfilelist->selectItem(sqlfilelist->getNumItems() - 1);
         }
         else
