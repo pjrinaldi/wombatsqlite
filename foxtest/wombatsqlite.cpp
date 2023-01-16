@@ -1027,12 +1027,17 @@ void WombatSqlite::AddProperty(int row, FXString offlen, FXString val, FXString 
 
 void WombatSqlite::PopulateFileHeader()
 {
+    if(filetype == '1')
+        proptable->setTableSize(8, 3);
+    else if(filetype == '2')
+        proptable->setTableSize(6, 3);
+    else if(filetype == '3')
+        proptable->setTableSize(18, 3);
+    proptable->setColumnText(0, "Offset, Length");
+    proptable->setColumnText(1, "Value");
+    proptable->setColumnText(2, "Description");
     if(filetype == '1') // WAL
     {
-        proptable->setTableSize(8, 3);
-        proptable->setColumnText(0, "Offset, Length");
-        proptable->setColumnText(1, "Value");
-        proptable->setColumnText(2, "Description");
         std::stringstream ss;
         ss << std::hex << std::setfill('0') << std::setw(8) << walheader.header;
         AddProperty(0, "0, 4", FXString("0x" + FXString(ss.str().c_str()).upper()), "WAL HEADER, last byte is either 0x82 or 0x83 which means something i forget right now.");
@@ -1046,59 +1051,37 @@ void WombatSqlite::PopulateFileHeader()
     }
     else if(filetype == '2') // JOURNAL
     {
+        std::stringstream ss;
+        ss << std::hex << std::setfill('0') << std::setw(8) << journalheader.header;
+        AddProperty(0, "0, 8", FXString("0x" + FXString(ss.str().c_str()).upper()), "JOURNAL HEADER");
+        AddProperty(1, "8, 4", FXString::value(journalheader.pagecnt), "Journal Page Count");
+        AddProperty(2, "12, 4", FXString::value(journalheader.randomnonce), "Journal Random Nonce");
+        AddProperty(3, "16, 4", FXString::value(journalheader.initsize), "Journal Initial Size");
+        AddProperty(4, "20, 4", FXString::value(journalheader.sectorsize), "Journal Sector Size");
+        AddProperty(5, "24, 4", FXString::value(journalheader.pagesize), "Journal Page Size");
     }
     else if(filetype == '3') // DB
     {
+        AddProperty(0, "0, 16", sqliteheader.header, "SQLite Header");
+        AddProperty(1, "16, 2", FXString::value(sqliteheader.pagesize), "SQLite Page Size");
+        AddProperty(2, "18, 1", FXString::value(sqliteheader.writeversion), "SQLite Write Version");
+        AddProperty(3, "19, 1", FXString::value(sqliteheader.readversion), "SQLite Read Version");
+        AddProperty(4, "20, 1", FXString::value(sqliteheader.unusedpagespace), "SQLite Unused Page Space");
+        AddProperty(5, "28, 4", FXString::value(sqliteheader.pagecount), "SQLite Page Count");
+        AddProperty(6, "32, 4", FXString::value(sqliteheader.firstfreepagenum), "SQLite First Free Page Number");
+        AddProperty(7, "36, 4", FXString::value(sqliteheader.freepagescount), "SQLite Free Pages Count");
+        AddProperty(8, "40, 4", FXString::value(sqliteheader.schemacookie), "SQLite Schema Cookie");
+        AddProperty(9, "44, 4", FXString::value(sqliteheader.schemaformat), "SQLite Schema Format");
+        AddProperty(10, "48, 4", FXString::value(sqliteheader.pagecachesize), "SQLite Page Cache Size");
+        AddProperty(11, "52, 4", FXString::value(sqliteheader.largestrootbtreepagenumber), "SQLite Largest Root B-Tree Page Number");
+        AddProperty(12, "56, 4", FXString::value(sqliteheader.textencoding), "SQLite Text Encoding");
+        AddProperty(13, "60, 4", FXString::value(sqliteheader.userversion), "SQLite User Version");
+        AddProperty(14, "64, 4", FXString::value(sqliteheader.incrementalvacuummodebool), "SQLite Incremental Vacuum Mode Boolean");
+        AddProperty(15, "68, 4", FXString::value(sqliteheader.appid), "SQLite App ID");
+        AddProperty(16, "92, 4", FXString::value(sqliteheader.versionvalidfornum), "SQLite Version Valid for Number");
+        AddProperty(17, "96, 4", FXString::value(sqliteheader.version), "SQLite Version");
     }
-    /*
-    ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
-    if(filetype == 1) // WAL
-    {
-        ui->propwidget->setRowCount(8);
-        AddProperty(0, "0, 4", QString("0x" + QString("%1").arg(walheader.header, 8, 16, QChar('0')).toUpper()), "WAL HEADER, last byte is either 0x82 or 0x83 which means something i forget right now");
-        AddProperty(1, "4, 4", QString::number(walheader.fileversion), "WAL File Version");
-        AddProperty(2, "8, 4", QString::number(walheader.pagesize), "WAL Page Size");
-        AddProperty(3, "12, 4", QString::number(walheader.checkptseqnum), "WAL Checkpoint Sequence Number");
-        AddProperty(4, "16, 4", QString::number(walheader.salt1), "WAL Salt 1");
-        AddProperty(5, "20, 4", QString::number(walheader.salt2), "WAL Salt 2");
-        AddProperty(6, "24, 4", QString::number(walheader.checksum1), "WAL Checksum 1");
-        AddProperty(7, "28, 4", QString::number(walheader.checksum2), "WAL Checksum 2");
-    }
-    else if(filetype == 2) // JOURNAL
-    {
-        ui->propwidget->setRowCount(6);
-        AddProperty(0, "0, 8", QString("0x" + QString("%1").arg(journalheader.header, 8, 16, QChar('0')).toUpper()), "JOURNAL HEADER");
-        AddProperty(1, "8, 4", QString::number(journalheader.pagecnt), "Journal Page Count");
-        AddProperty(2, "12, 4", QString::number(journalheader.randomnonce), "Journal Random Nonce");
-        AddProperty(3, "16, 4", QString::number(journalheader.initsize), "Journal Initial Size");
-        AddProperty(4, "20, 4", QString::number(journalheader.sectorsize), "Journal Sector Size");
-        AddProperty(5, "24, 4", QString::number(journalheader.pagesize), "Journal Page Size");
-    }
-    else if(filetype == 3) // SQLITE DB
-    {
-        ui->propwidget->setRowCount(18);
-        AddProperty(0, "0, 16", sqliteheader.header, "SQLITE HEADER");
-        AddProperty(1, "16, 2", QString::number(sqliteheader.pagesize), "SQLite Page Size");
-        AddProperty(2, "18, 1", QString::number(sqliteheader.writeversion), "SQLite Write Version");
-        AddProperty(3, "19, 1", QString::number(sqliteheader.readversion), "SQLite Read Version");
-        AddProperty(4, "20, 1", QString::number(sqliteheader.unusedpagespace), "SQLite Unused Page Space");
-        AddProperty(5, "28, 4", QString::number(sqliteheader.pagecount), "SQLite Page Count");
-        AddProperty(6, "32, 4", QString::number(sqliteheader.firstfreepagenum), "SQLite First Free Page Number");
-        AddProperty(7, "36, 4", QString::number(sqliteheader.freepagescount), "SQLite Free Pages Count");
-        AddProperty(8, "40, 4", QString::number(sqliteheader.schemacookie), "SQLite Schema Cookie");
-        AddProperty(9, "44, 4", QString::number(sqliteheader.schemaformat), "SQLite Schema Format");
-        AddProperty(10, "48, 4", QString::number(sqliteheader.pagecachesize), "SQLite Page Cache Size");
-        AddProperty(11, "52, 4", QString::number(sqliteheader.largestrootbtreepagenumber), "SQLite Largest Root B-Tree Page Number");
-        AddProperty(12, "56, 4", QString::number(sqliteheader.textencoding), "SQLite Text Encoding");
-        AddProperty(13, "60, 4", QString::number(sqliteheader.userversion), "SQLite User Version");
-        AddProperty(14, "64, 4", QString::number(sqliteheader.incrementalvacuummodebool), "SQLite Incremental Vacuum Mode Boolean");
-        AddProperty(15, "68, 4", QString::number(sqliteheader.appid), "SQLite App ID");
-        AddProperty(16, "92, 4", QString::number(sqliteheader.versionvalidfornum), "SQLite Version Valid for Number");
-        AddProperty(17, "96, 4", QString::number(sqliteheader.version), "SQLite Version");
-    }
-    ui->propwidget->resizeColumnToContents(2);
-
-     */ 
+    proptable->fitColumnsToContents(2);
 }
 
 long WombatSqlite::PropertySelected(FXObject*, FXSelector, void*)
