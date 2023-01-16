@@ -1082,6 +1082,13 @@ void WombatSqlite::PopulateFileHeader()
         AddProperty(17, "96, 4", FXString::value(sqliteheader.version), "SQLite Version");
     }
     proptable->fitColumnsToContents(2);
+    AlignColumn(proptable, 2, FXTableItem::LEFT);
+}
+
+void WombatSqlite::AlignColumn(FXTable* curtable, int col, FXuint justify)
+{
+    for(int i=0; i < curtable->getNumRows(); i++)
+        curtable->setItemJustify(i, col, justify);
 }
 
 long WombatSqlite::PropertySelected(FXObject*, FXSelector, void*)

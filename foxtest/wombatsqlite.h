@@ -195,6 +195,7 @@ class WombatSqlite : public FXMainWindow
         void PopulateFileHeader(void);
         void AddProperty(int row, FXString offlen, FXString val, FXString desc);
         void AddContent(int row, FXString islive, FXString rowid, FXString offlen, FXString type, FXString val, FXString tag);
+        void AlignColumn(FXTable* curtable, int row, FXuint justify);
 	void StatusUpdate(FXString tmptext)
 	{
 	    statusbar->getStatusLine()->setNormalText(tmptext);
