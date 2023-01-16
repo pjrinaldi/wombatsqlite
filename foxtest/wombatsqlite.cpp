@@ -714,38 +714,17 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
         {
             filetype = 1; // WAL
             ReadContent(filebufptr, &pagesize, 8);
-            /*
-            uint8_t* psize = new uint8_t[4];
-            pagesize = 0;
-            ReadContent(filebufptr, psize, 8, 4);
-            ReturnUint32(&pagesize, psize);
-            delete[] psize;
-            */
             //std::cout << "WAL page size:" << pagesize << std::endl;
         }
         else
         {
             uint64_t journalheader = 0;
             ReadContent(filebufptr, &journalheader, 0);
-            /*
-            uint8_t* jh = new uint8_t[8];
-            ReadContent(filebufptr, jh, 0, 8);
-            uint64_t journalheader = 0;
-            ReturnUint64(&journalheader, jh);
-            delete[] jh;
-            */
             //std::cout << "journalheader: " << std::hex << journalheader << std::endl;
             if(journalheader == 0xd9d505f920a163d7) // JOURNAL
             {
                 filetype = 2; // JOURNAL
                 ReadContent(filebufptr, &pagesize, 24);
-                /*
-                uint8_t* ps = new uint8_t[4];
-                pagesize = 0;
-                ReadContent(filebufptr, ps, 24, 4);
-                ReturnUint32(&pagesize, ps);
-                delete[] ps;
-                */
                 //std::cout << "page size:" << pagesize << std::endl;
             }
             else
@@ -759,15 +738,6 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
                     uint16_t ps = 0;
                     ReadContent(filebufptr, &ps, 16);
                     pagesize = ps;
-                    /*
-                    uint8_t* ps = new uint8_t[2];
-                    pagesize = 0;
-                    uint16_t ps16 = 0;
-                    ReadContent(filebufptr, ps, 16, 2);
-                    ReturnUint16(&ps16, ps);
-                    delete[] ps;
-                    pagesize = ps16;
-                    */
                     //std::cout << "pagesize: " << pagesize << std::endl;
                 }
             }
@@ -820,9 +790,7 @@ long WombatSqlite::FileSelected(FXObject*, FXSelector, void*)
     LoadPage();
     //std::cout << curfileuserdata.mid(0, lfound).text() << std::endl;
     //std::cout << filetype << " " << pagesize << " " << curpage << std::endl;
-    /*
-    LoadPage();
-     */ 
+    
     return 1;
 }
 
@@ -902,40 +870,6 @@ void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
         ReadInteger(pageheader, 20, &walheader.salt2);
         ReadInteger(pageheader, 24, &walheader.checksum1);
         ReadInteger(pageheader, 28, &walheader.checksum2);
-        /*
-        uint8_t* wh = new uint8_t[4];
-        wh = substr(pageheader, 0, 4);
-        ReturnUint32(&walheader.header, wh);
-        delete[] wh;
-        uint8_t* fv = new uint8_t[4];
-        fv = substr(pageheader, 4, 4);
-        ReturnUint32(&walheader.fileversion, fv);
-        delete[] fv;
-        uint8_t* ps = new uint8_t[4];
-        ps = substr(pageheader, 8, 4);
-        ReturnUint32(&walheader.pagesize, ps);
-        delete[] ps;
-        uint8_t* csn = new uint8_t[4];
-        csn = substr(pageheader, 12, 4);
-        ReturnUint32(&walheader.checkptseqnum, csn);
-        delete[] csn;
-        uint8_t* s1 = new uint8_t[4];
-        s1 = substr(pageheader, 16, 4);
-        ReturnUint32(&walheader.salt1, s1);
-        delete[] s1;
-        uint8_t* s2 = new uint8_t[4];
-        s2 = substr(pageheader, 20, 4);
-        ReturnUint32(&walheader.salt2, s2);
-        delete[] s2;
-        uint8_t* cs1 = new uint8_t[4];
-        cs1 = substr(pageheader, 24, 4);
-        ReturnUint32(&walheader.checksum1, cs1);
-        delete[] cs1;
-        uint8_t* cs2 = new uint8_t[4];
-        cs2 = substr(pageheader, 28, 4);
-        ReturnUint32(&walheader.checksum2, cs2);
-        delete[] cs2;
-        */
     }
     else if(filetype == '2') // JOURNAL
     {
@@ -945,32 +879,6 @@ void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
         ReadInteger(pageheader, 16, &journalheader.initsize);
         ReadInteger(pageheader, 20, &journalheader.sectorsize);
         ReadInteger(pageheader, 24, &journalheader.pagesize);
-        /*
-        uint8_t* hd = new uint8_t[8];
-        hd = substr(pageheader, 0, 8);
-        ReturnUint64(&journalheader.header, hd);
-        delete[] hd;
-        uint8_t* pc = new uint8_t[4];
-        pc = substr(pageheader, 8, 4);
-        ReturnUint32(&journalheader.pagecnt, pc);
-        delete[] pc;
-        uint8_t* rn = new uint8_t[4];
-        rn = substr(pageheader, 12, 4);
-        ReturnUint32(&journalheader.randomnonce, rn);
-        delete[] rn;
-        uint8_t* is = new uint8_t[4];
-        is = substr(pageheader, 16, 4);
-        ReturnUint32(&journalheader.initsize, is);
-        delete[] is;
-        uint8_t* ss = new uint8_t[4];
-        ss = substr(pageheader, 20, 4);
-        ReturnUint32(&journalheader.sectorsize, ss);
-        delete[] ss;
-        uint8_t* ps = new uint8_t[4];
-        ps = substr(pageheader, 24, 4);
-        ReturnUint32(&journalheader.pagesize, ps);
-        delete[] ps;
-        */
     }
     else if(filetype == '3') // SQLITE DB
     {
@@ -978,12 +886,6 @@ void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
         ReadInteger(pageheader, 16, &sqliteheader.pagesize);
         //std::cout << "page header: " << substr(pageheader, 0, 16)[0] << std::endl;
         //std::cout << "sqlite header:" << sqliteheader.header.text() << std::endl;
-        /*
-        uint8_t* ps = new uint8_t[2];
-        ps = substr(pageheader, 16, 2);
-        ReturnUint16(&sqliteheader.pagesize, ps);
-        delete[] ps;
-        */
         //std::cout << "pagesize: " << sqliteheader.pagesize << std::endl;
         sqliteheader.writeversion = pageheader[18];
         sqliteheader.readversion = pageheader[19];
@@ -1001,61 +903,6 @@ void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
         ReadInteger(pageheader, 68, &sqliteheader.appid);
         ReadInteger(pageheader, 92, &sqliteheader.versionvalidfornum);
         ReadInteger(pageheader, 96, &sqliteheader.version);
-        /*
-        uint8_t* pc = new uint8_t[4];
-        pc = substr(pageheader, 28, 4);
-        ReturnUint32(&sqliteheader.pagecount, pc);
-        delete[] pc;
-        //std::cout << "page count: " << sqliteheader.pagecount << std::endl;
-        uint8_t* ffpn = new uint8_t[4];
-        ffpn = substr(pageheader, 32, 4);
-        ReturnUint32(&sqliteheader.firstfreepagenum, ffpn);
-        delete[] ffpn;
-        uint8_t* fpc = new uint8_t[4];
-        fpc = substr(pageheader, 36, 4);
-        ReturnUint32(&sqliteheader.freepagescount, fpc);
-        delete[] fpc;
-        uint8_t* sc = new uint8_t[4];
-        sc = substr(pageheader, 40, 4);
-        ReturnUint32(&sqliteheader.schemacookie, sc);
-        delete[] sc;
-        uint8_t* sf = new uint8_t[4];
-        sf = substr(pageheader, 44, 4);
-        ReturnUint32(&sqliteheader.schemaformat, sf);
-        delete[] sf;
-        uint8_t* pcs = new uint8_t[4];
-        pcs = substr(pageheader, 48, 4);
-        ReturnUint32(&sqliteheader.pagecachesize, pcs);
-        delete[] pcs;
-        uint8_t* lrbpn = new uint8_t[4];
-        lrbpn = substr(pageheader, 52, 4);
-        ReturnUint32(&sqliteheader.largestrootbtreepagenumber, lrbpn);
-        delete[] lrbpn;
-        uint8_t* te = new uint8_t[4];
-        te = substr(pageheader, 56, 4);
-        ReturnUint32(&sqliteheader.textencoding, te);
-        delete[] te;
-        uint8_t* uv = new uint8_t[4];
-        uv = substr(pageheader, 60, 4);
-        ReturnUint32(&sqliteheader.userversion, uv);
-        delete[] uv;
-        uint8_t* ivm = new uint8_t[4];
-        ivm = substr(pageheader, 64, 4);
-        ReturnUint32(&sqliteheader.incrementalvacuummodebool, ivm);
-        delete[] ivm;
-        uint8_t* ai = new uint8_t[4];
-        ai = substr(pageheader, 68, 4);
-        ReturnUint32(&sqliteheader.appid, ai);
-        delete[] ai;
-        uint8_t* vvn = new uint8_t[4];
-        vvn = substr(pageheader, 92, 4);
-        ReturnUint32(&sqliteheader.versionvalidfornum, vvn);
-        delete[] vvn;
-        uint8_t* vn = new uint8_t[4];
-        vn = substr(pageheader, 96, 4);
-        ReturnUint32(&sqliteheader.version, vn);
-        delete[] vn;
-        */
     }
 }
 
