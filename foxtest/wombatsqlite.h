@@ -137,6 +137,8 @@ class WombatSqlite : public FXMainWindow
         uint64_t pagecount = 0;
         uint32_t pagesize = 0;
         uint64_t curpage = 0;
+        JournalHeader journalheader;
+        WalHeader walheader;
         SqliteHeader sqliteheader;
         PageHeader pageheader;
         FrameHeader frameheader;
@@ -188,7 +190,8 @@ class WombatSqlite : public FXMainWindow
         FXString DecryptRot13(FXString encstr);
         FXchar Rot13Char(FXchar curchar);
         void LoadPage(void);
-        void ParseHeader(uint8_t* pageheader);
+        void ParseFileHeader(uint8_t* pageheader);
+        void PopulateFileHeader(void);
 	void StatusUpdate(FXString tmptext)
 	{
 	    statusbar->getStatusLine()->setNormalText(tmptext);

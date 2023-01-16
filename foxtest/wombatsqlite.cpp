@@ -821,27 +821,16 @@ void WombatSqlite::LoadPage()
 {
     //std::cout << "curpage: " << curpage << " filetype: " << filetype << std::endl;
     uint8_t* pagebuf = new uint8_t[pagesize];
-    ReadContent(filebufptr, pagebuf, 0, pagesize);
+    ReadContent(filebufptr, pagebuf, (curpage - 1) * pagesize, pagesize);
     if(curpage == 1)
     {
         uint8_t* pageheader = substr(pagebuf, 0, 100);
-        ParseHeader(pageheader);
+        ParseFileHeader(pageheader);
+        PopulateFileHeader();
     }
     //std::cout << "content: " << pagebuf[0] << std::endl;
     /*
     //qDebug() << "file type:" << filetype << "pagesize:" << pagesize << "curpage:" << curpage;
-    QByteArray pagearray;
-    if(dbfile.isOpen())
-        dbfile.close();
-    dbfile.setFileName(curfilepath);
-    dbfile.open(QIODevice::ReadOnly);
-    if(dbfile.isOpen())
-    {
-        dbfile.seek((curpage - 1) * pagesize);
-        //qDebug() << "dbfile offset:" << dbfile.pos();
-        pagearray = dbfile.read(pagesize);
-        dbfile.close();
-    }
     if(curpage == 1)
     {
         QByteArray pghdrarray = pagearray.left(100);
@@ -887,33 +876,71 @@ void WombatSqlite::LoadPage()
      */ 
 }
 
-void WombatSqlite::ParseHeader(uint8_t* pageheader)
+void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
 {
     //std::cout << "filetype: " << filetype << std::endl;
     //std::cout << "page hedaer: " << pageheader[0] << pageheader[1] << std::endl;
     if(filetype == '1') // WAL
     {
-        /*
-        walheader.header = qFromBigEndian<quint32>(pageheader->mid(0, 4));
-        walheader.fileversion = qFromBigEndian<quint32>(pageheader->mid(4, 4));
-        walheader.pagesize = qFromBigEndian<quint32>(pageheader->mid(8, 4));
-        walheader.checkptseqnum = qFromBigEndian<quint32>(pageheader->mid(12, 4));
-        walheader.salt1 = qFromBigEndian<quint32>(pageheader->mid(16, 4));
-        walheader.salt2 = qFromBigEndian<quint32>(pageheader->mid(20, 4));
-        walheader.checksum1 = qFromBigEndian<quint32>(pageheader->mid(24, 4));
-        walheader.checksum2 = qFromBigEndian<quint32>(pageheader->mid(28, 4));
-        */
+        uint8_t* wh = new uint8_t[4];
+        wh = substr(pageheader, 0, 4);
+        ReturnUint32(&walheader.header, wh);
+        delete[] wh;
+        uint8_t* fv = new uint8_t[4];
+        fv = substr(pageheader, 4, 4);
+        ReturnUint32(&walheader.fileversion, fv);
+        delete[] fv;
+        uint8_t* ps = new uint8_t[4];
+        ps = substr(pageheader, 8, 4);
+        ReturnUint32(&walheader.pagesize, ps);
+        delete[] ps;
+        uint8_t* csn = new uint8_t[4];
+        csn = substr(pageheader, 12, 4);
+        ReturnUint32(&walheader.checkptseqnum, csn);
+        delete[] csn;
+        uint8_t* s1 = new uint8_t[4];
+        s1 = substr(pageheader, 16, 4);
+        ReturnUint32(&walheader.salt1, s1);
+        delete[] s1;
+        uint8_t* s2 = new uint8_t[4];
+        s2 = substr(pageheader, 20, 4);
+        ReturnUint32(&walheader.salt2, s2);
+        delete[] s2;
+        uint8_t* cs1 = new uint8_t[4];
+        cs1 = substr(pageheader, 24, 4);
+        ReturnUint32(&walheader.checksum1, cs1);
+        delete[] cs1;
+        uint8_t* cs2 = new uint8_t[4];
+        cs2 = substr(pageheader, 28, 4);
+        ReturnUint32(&walheader.checksum2, cs2);
+        delete[] cs2;
     }
     else if(filetype == '2') // JOURNAL
     {
-        /*
-	journalheader.header = qFromBigEndian<quint64>(pageheader->mid(0,8));
-	journalheader.pagecnt = qFromBigEndian<quint32>(pageheader->mid(8, 4));
-	journalheader.randomnonce = qFromBigEndian<quint32>(pageheader->mid(12, 4));
-	journalheader.initsize = qFromBigEndian<quint32>(pageheader->mid(16, 4));
-	journalheader.sectorsize = qFromBigEndian<quint32>(pageheader->mid(20, 4));
-	journalheader.pagesize = qFromBigEndian<quint32>(pageheader->mid(24, 4));
-        */
+        uint8_t* hd = new uint8_t[8];
+        hd = substr(pageheader, 0, 8);
+        ReturnUint64(&journalheader.header, hd);
+        delete[] hd;
+        uint8_t* pc = new uint8_t[4];
+        pc = substr(pageheader, 8, 4);
+        ReturnUint32(&journalheader.pagecnt, pc);
+        delete[] pc;
+        uint8_t* rn = new uint8_t[4];
+        rn = substr(pageheader, 12, 4);
+        ReturnUint32(&journalheader.randomnonce, rn);
+        delete[] rn;
+        uint8_t* is = new uint8_t[4];
+        is = substr(pageheader, 16, 4);
+        ReturnUint32(&journalheader.initsize, is);
+        delete[] is;
+        uint8_t* ss = new uint8_t[4];
+        ss = substr(pageheader, 20, 4);
+        ReturnUint32(&journalheader.sectorsize, ss);
+        delete[] ss;
+        uint8_t* ps = new uint8_t[4];
+        ps = substr(pageheader, 24, 4);
+        ReturnUint32(&journalheader.pagesize, ps);
+        delete[] ps;
     }
     else if(filetype == '3') // SQLITE DB
     {
@@ -982,6 +1009,59 @@ void WombatSqlite::ParseHeader(uint8_t* pageheader)
         ReturnUint32(&sqliteheader.version, vn);
         delete[] vn;
     }
+}
+
+void WombatSqlite::PopulateFileHeader()
+{
+    /*
+    ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
+    if(filetype == 1) // WAL
+    {
+        ui->propwidget->setRowCount(8);
+        AddProperty(0, "0, 4", QString("0x" + QString("%1").arg(walheader.header, 8, 16, QChar('0')).toUpper()), "WAL HEADER, last byte is either 0x82 or 0x83 which means something i forget right now");
+        AddProperty(1, "4, 4", QString::number(walheader.fileversion), "WAL File Version");
+        AddProperty(2, "8, 4", QString::number(walheader.pagesize), "WAL Page Size");
+        AddProperty(3, "12, 4", QString::number(walheader.checkptseqnum), "WAL Checkpoint Sequence Number");
+        AddProperty(4, "16, 4", QString::number(walheader.salt1), "WAL Salt 1");
+        AddProperty(5, "20, 4", QString::number(walheader.salt2), "WAL Salt 2");
+        AddProperty(6, "24, 4", QString::number(walheader.checksum1), "WAL Checksum 1");
+        AddProperty(7, "28, 4", QString::number(walheader.checksum2), "WAL Checksum 2");
+    }
+    else if(filetype == 2) // JOURNAL
+    {
+        ui->propwidget->setRowCount(6);
+        AddProperty(0, "0, 8", QString("0x" + QString("%1").arg(journalheader.header, 8, 16, QChar('0')).toUpper()), "JOURNAL HEADER");
+        AddProperty(1, "8, 4", QString::number(journalheader.pagecnt), "Journal Page Count");
+        AddProperty(2, "12, 4", QString::number(journalheader.randomnonce), "Journal Random Nonce");
+        AddProperty(3, "16, 4", QString::number(journalheader.initsize), "Journal Initial Size");
+        AddProperty(4, "20, 4", QString::number(journalheader.sectorsize), "Journal Sector Size");
+        AddProperty(5, "24, 4", QString::number(journalheader.pagesize), "Journal Page Size");
+    }
+    else if(filetype == 3) // SQLITE DB
+    {
+        ui->propwidget->setRowCount(18);
+        AddProperty(0, "0, 16", sqliteheader.header, "SQLITE HEADER");
+        AddProperty(1, "16, 2", QString::number(sqliteheader.pagesize), "SQLite Page Size");
+        AddProperty(2, "18, 1", QString::number(sqliteheader.writeversion), "SQLite Write Version");
+        AddProperty(3, "19, 1", QString::number(sqliteheader.readversion), "SQLite Read Version");
+        AddProperty(4, "20, 1", QString::number(sqliteheader.unusedpagespace), "SQLite Unused Page Space");
+        AddProperty(5, "28, 4", QString::number(sqliteheader.pagecount), "SQLite Page Count");
+        AddProperty(6, "32, 4", QString::number(sqliteheader.firstfreepagenum), "SQLite First Free Page Number");
+        AddProperty(7, "36, 4", QString::number(sqliteheader.freepagescount), "SQLite Free Pages Count");
+        AddProperty(8, "40, 4", QString::number(sqliteheader.schemacookie), "SQLite Schema Cookie");
+        AddProperty(9, "44, 4", QString::number(sqliteheader.schemaformat), "SQLite Schema Format");
+        AddProperty(10, "48, 4", QString::number(sqliteheader.pagecachesize), "SQLite Page Cache Size");
+        AddProperty(11, "52, 4", QString::number(sqliteheader.largestrootbtreepagenumber), "SQLite Largest Root B-Tree Page Number");
+        AddProperty(12, "56, 4", QString::number(sqliteheader.textencoding), "SQLite Text Encoding");
+        AddProperty(13, "60, 4", QString::number(sqliteheader.userversion), "SQLite User Version");
+        AddProperty(14, "64, 4", QString::number(sqliteheader.incrementalvacuummodebool), "SQLite Incremental Vacuum Mode Boolean");
+        AddProperty(15, "68, 4", QString::number(sqliteheader.appid), "SQLite App ID");
+        AddProperty(16, "92, 4", QString::number(sqliteheader.versionvalidfornum), "SQLite Version Valid for Number");
+        AddProperty(17, "96, 4", QString::number(sqliteheader.version), "SQLite Version");
+    }
+    ui->propwidget->resizeColumnToContents(2);
+
+     */ 
 }
 
     /*
