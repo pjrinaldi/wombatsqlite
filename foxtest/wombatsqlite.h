@@ -183,6 +183,7 @@ class WombatSqlite : public FXMainWindow
         long PreviewReport(FXObject*, FXSelector, void*);
         long PublishReport(FXObject*, FXSelector, void*);
         long FileSelected(FXObject*, FXSelector, void*);
+        long PropertySelected(FXObject*, FXSelector, void*);
 	//void PopulateChildKeys(libregf_key_t* curkey, FXTreeItem* curitem, libregf_error_t* regerr);
 	void GetRootString(FXTreeItem* curitem, FXString* rootstring);
 	FXString ConvertWindowsTimeToUnixTimeUTC(uint64_t input);
@@ -192,6 +193,8 @@ class WombatSqlite : public FXMainWindow
         void LoadPage(void);
         void ParseFileHeader(uint8_t* pageheader);
         void PopulateFileHeader(void);
+        void AddProperty(int row, FXString offlen, FXString val, FXString desc);
+        void AddContent(int row, FXString islive, FXString rowid, FXString offlen, FXString type, FXString val, FXString tag);
 	void StatusUpdate(FXString tmptext)
 	{
 	    statusbar->getStatusLine()->setNormalText(tmptext);
@@ -213,6 +216,7 @@ FXDEFMAP(WombatSqlite) WombatSqliteMap[]={
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PREVIEW, WombatSqlite::PreviewReport),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PUBLISH, WombatSqlite::PublishReport),
     FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_SQLLIST, WombatSqlite::FileSelected),
+    FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_PROPTABLE, WombatSqlite::PropertySelected),
 };
 
 #endif // WOMBATSQLITE_H

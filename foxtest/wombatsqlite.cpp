@@ -24,10 +24,7 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     hextext->setScrollStyle(VSCROLLER_NEVER|HSCROLLER_NEVER);
     asciitext->setScrollStyle(VSCROLLER_ALWAYS|HSCROLLER_NEVER);
     plainfont = new FXFont(a, "monospace");
-    //textscrollbar = new FXScrollBar(vsplitter2, this, ID_SCROLLBAR);
     sqlfilelist->setWidth(this->getWidth() / 4);
-    //proptable->setWidth(this->getWidth() / 4);
-    //tablelist->setHeight(this->getHeight() / 4);
     vsplitter2->setHeight(this->getHeight() / 2);
     offsettext->setWidth(55);
     offsettext->setFont(plainfont);
@@ -717,13 +714,13 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
         //std::cout << "sql header:" << std::hex << sqlheader << std::endl;
         if(sqlheader == 0x377f0682 || sqlheader == 0x377f0683) // WAL
         {
-            filetype == 1; // WAL
+            filetype = 1; // WAL
             uint8_t* psize = new uint8_t[4];
             pagesize = 0;
             ReadContent(filebufptr, psize, 8, 4);
             ReturnUint32(&pagesize, psize);
             delete[] psize;
-            //std::cout << "page size:" << pagesize << std::endl;
+            //std::cout << "WAL page size:" << pagesize << std::endl;
         }
         else
         {
@@ -1011,8 +1008,48 @@ void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
     }
 }
 
+void WombatSqlite::AddContent(int row, FXString islive, FXString rowid, FXString offlen, FXString type, FXString val, FXString tag)
+{
+    tablelist->setItemText(row, 0, tag);
+    tablelist->setItemText(row, 1, islive);
+    tablelist->setItemText(row, 2, rowid);
+    tablelist->setItemText(row, 3, offlen);
+    tablelist->setItemText(row, 4, type);
+    tablelist->setItemText(row, 5, val);
+}
+
+void WombatSqlite::AddProperty(int row, FXString offlen, FXString val, FXString desc)
+{
+    proptable->setItemText(row, 0, offlen);
+    proptable->setItemText(row, 1, val);
+    proptable->setItemText(row, 2, desc);
+}
+
 void WombatSqlite::PopulateFileHeader()
 {
+    if(filetype == '1') // WAL
+    {
+        proptable->setTableSize(8, 3);
+        proptable->setColumnText(0, "Offset, Length");
+        proptable->setColumnText(1, "Value");
+        proptable->setColumnText(2, "Description");
+        std::stringstream ss;
+        ss << std::hex << std::setfill('0') << std::setw(8) << walheader.header;
+        AddProperty(0, "0, 4", FXString("0x" + FXString(ss.str().c_str()).upper()), "WAL HEADER, last byte is either 0x82 or 0x83 which means something i forget right now.");
+        AddProperty(1, "4, 4", FXString::value(walheader.fileversion), "WAL File Version");
+        AddProperty(2, "8, 4", FXString::value(walheader.pagesize), "WAL Page Size");
+        AddProperty(3, "12, 4", FXString::value(walheader.checkptseqnum), "WAL Checkpoint Sequence Number");
+        AddProperty(4, "16, 4", FXString::value(walheader.salt1), "WAL Salt 1");
+        AddProperty(5, "20, 4", FXString::value(walheader.salt2), "WAL Salt 2");
+        AddProperty(6, "24, 4", FXString::value(walheader.checksum1), "WAL Checksum 1");
+        AddProperty(7, "28, 4", FXString::value(walheader.checksum2), "WAL Checksum 2");
+    }
+    else if(filetype == '2') // JOURNAL
+    {
+    }
+    else if(filetype == '3') // DB
+    {
+    }
     /*
     ui->propwidget->setHorizontalHeaderLabels({"Offset,Length", "Value", "Description"});
     if(filetype == 1) // WAL
@@ -1061,6 +1098,43 @@ void WombatSqlite::PopulateFileHeader()
     }
     ui->propwidget->resizeColumnToContents(2);
 
+     */ 
+}
+
+long WombatSqlite::PropertySelected(FXObject*, FXSelector, void*)
+{
+    proptable->selectRow(proptable->getCurrentRow());
+
+    return 1;
+    /*
+    if(ui->propwidget->currentRow() > -1 && ui->propwidget->currentItem() != NULL)
+    {
+        ui->tablewidget->setCurrentItem(NULL);
+        QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
+        QTextCursor hexcursor = ui->hexedit->textCursor();
+        hexcursor.setPosition(vallist.at(0).toUInt() * 3);
+        hexcursor.setPosition((vallist.at(0).toUInt() + vallist.at(1).toUInt()) * 3 - 1, QTextCursor::KeepAnchor);
+        ui->hexedit->setTextCursor(hexcursor);
+        QTextCursor utf8cursor = ui->utf8edit->textCursor();
+        //qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
+        if(vallist.at(0).toUInt() > 15)
+        {
+            uint linenumber = vallist.at(0).toUInt() / 16;
+            ui->editscrollbar->setValue(linenumber - 1);
+            utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
+            utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+        }
+        else
+        {
+            ui->editscrollbar->setValue(0);
+            utf8cursor.setPosition(vallist.at(0).toUInt());
+            utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+        }
+        ui->utf8edit->setTextCursor(utf8cursor);
+
+        OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
+        LengthUpdate(vallist.at(1));
+    }
      */ 
 }
 
