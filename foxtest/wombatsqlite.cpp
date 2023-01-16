@@ -825,6 +825,9 @@ void WombatSqlite::LoadPage()
         ParseFileHeader(pageheader);
         PopulateFileHeader();
     }
+    ParsePageHeader(pagebuf, filetype, curpage);
+
+
     //std::cout << "content: " << pagebuf[0] << std::endl;
     /*
     //qDebug() << "file type:" << filetype << "pagesize:" << pagesize << "curpage:" << curpage;
@@ -1083,6 +1086,10 @@ void WombatSqlite::PopulateFileHeader()
     }
     proptable->fitColumnsToContents(2);
     AlignColumn(proptable, 2, FXTableItem::LEFT);
+}
+
+void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint64_t curpage)
+{
 }
 
 void WombatSqlite::AlignColumn(FXTable* curtable, int col, FXuint justify)
