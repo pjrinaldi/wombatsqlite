@@ -107,7 +107,7 @@ class WombatSqlite : public FXMainWindow
         FXLabel* pagelabel;
         FXSpinner* pagespinner;
         FXLabel* ofpagelabel;
-        FXTable* proplist;
+        FXTable* proptable;
         FXTable* tablelist;
 	FXIcon* openicon;
         FXButton* openbutton;
@@ -127,6 +127,7 @@ class WombatSqlite : public FXMainWindow
         FXArray<FXString> sqlitefiles;
         std::vector<std::string> tags;
         FXArray<FXString> taggedlist;
+        std::ifstream filebuffer;
         std::ifstream* filebufptr;
         FXArray<FXString> fileuserdata;
         FXString curfileuserdata;
@@ -136,6 +137,9 @@ class WombatSqlite : public FXMainWindow
         uint64_t pagecount = 0;
         uint32_t pagesize = 0;
         uint64_t curpage = 0;
+        SqliteHeader sqliteheader;
+        PageHeader pageheader;
+        FrameHeader frameheader;
 
     protected:
         WombatSqlite() {}
@@ -183,6 +187,8 @@ class WombatSqlite : public FXMainWindow
         FXString ConvertUnixTimeToString(uint32_t input);
         FXString DecryptRot13(FXString encstr);
         FXchar Rot13Char(FXchar curchar);
+        void LoadPage(void);
+        void ParseHeader(uint8_t* pageheader);
 	void StatusUpdate(FXString tmptext)
 	{
 	    statusbar->getStatusLine()->setNormalText(tmptext);

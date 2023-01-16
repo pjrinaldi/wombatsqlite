@@ -13,7 +13,7 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     vsplitter = new FXSplitter(mainframe, SPLITTER_NORMAL|LAYOUT_FILL);
     sqlfilelist = new FXList(vsplitter, this, ID_SQLLIST);
     hsplitter = new FXSplitter(vsplitter, SPLITTER_VERTICAL);
-    proplist = new FXTable(vsplitter, this, ID_PROPTABLE, TABLE_COL_SIZABLE);
+    proptable = new FXTable(vsplitter, this, ID_PROPTABLE, TABLE_COL_SIZABLE);
     statusbar = new FXStatusBar(mainframe, LAYOUT_BOTTOM|LAYOUT_LEFT|LAYOUT_FILL_X);
     vsplitter2 = new FXSplitter(hsplitter, SPLITTER_NORMAL, LAYOUT_FILL_X|LAYOUT_FILL_Y);
     tablelist = new FXTable(hsplitter, this, ID_TABLESELECT, TABLE_COL_SIZABLE|LAYOUT_FILL_X);
@@ -26,7 +26,7 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     plainfont = new FXFont(a, "monospace");
     //textscrollbar = new FXScrollBar(vsplitter2, this, ID_SCROLLBAR);
     sqlfilelist->setWidth(this->getWidth() / 4);
-    //proplist->setWidth(this->getWidth() / 4);
+    //proptable->setWidth(this->getWidth() / 4);
     //tablelist->setHeight(this->getHeight() / 4);
     vsplitter2->setHeight(this->getHeight() / 2);
     offsettext->setWidth(55);
@@ -39,16 +39,16 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     asciitext->setWidth(150);
     asciitext->setText("1234567890abcdef");
     hsplitter->setWidth(offsettext->getWidth() + hextext->getWidth() + asciitext->getWidth() + 10);
-    proplist->setRowHeaderWidth(0);
+    proptable->setRowHeaderWidth(0);
     tablelist->setRowHeaderWidth(0);
-    proplist->setEditable(false);
-    proplist->setTableSize(4, 3);
+    proptable->setEditable(false);
+    proptable->setTableSize(4, 3);
     tablelist->setEditable(false);
     tablelist->setTableSize(5, 6);
-    proplist->setColumnText(0, "Offset, Length");
-    proplist->setColumnText(1, "Value");
-    proplist->setColumnText(2, "Description");
-    proplist->setColumnHeaderHeight(proplist->getColumnHeaderHeight() + 5);
+    proptable->setColumnText(0, "Offset, Length");
+    proptable->setColumnText(1, "Value");
+    proptable->setColumnText(2, "Description");
+    proptable->setColumnHeaderHeight(proptable->getColumnHeaderHeight() + 5);
     tablelist->setColumnText(0, "Tag");
     tablelist->setColumnText(1, "Is Live");
     tablelist->setColumnText(2, "Row ID");
@@ -704,7 +704,7 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
     {
         prevsqlitepath = sqlitefilepath;
         filetype = 0;
-        std::ifstream filebuffer(sqlitefilepath.text(), std::ios::in|std::ios::binary);
+        filebuffer.open(sqlitefilepath.text(), std::ios::in|std::ios::binary);
         filebufptr = &filebuffer;
         filebufptr->seekg(0, filebuffer.end);
         filesize = filebufptr->tellg();
@@ -807,14 +807,140 @@ long WombatSqlite::FileSelected(FXObject*, FXSelector, void*)
     pagesize = curfileuserdata.mid(lfound+1, rfound-1).toULong();
     curpage = curfileuserdata.mid(rfound+1, curfileuserdata.length() - rfound - 1).toULong();
     pagespinner->setValue(curpage);
+    proptable->setCurrentItem(-1, -1);
+    LoadPage();
     //std::cout << curfileuserdata.mid(0, lfound).text() << std::endl;
     //std::cout << filetype << " " << pagesize << " " << curpage << std::endl;
     /*
-    ui->pagespinbox->setValue(curpage);
-    ui->propwidget->setCurrentItem(NULL);
     LoadPage();
      */ 
     return 1;
+}
+
+void WombatSqlite::LoadPage()
+{
+    //std::cout << "curpage: " << curpage << " filetype: " << filetype << std::endl;
+    uint8_t* pagebuf = new uint8_t[pagesize];
+    ReadContent(filebufptr, pagebuf, 0, pagesize);
+    if(curpage == 1)
+    {
+        uint8_t* pageheader = substr(pagebuf, 0, 100);
+        ParseHeader(pageheader);
+    }
+    //std::cout << "content: " << pagebuf[0] << std::endl;
+    /*
+    //qDebug() << "file type:" << filetype << "pagesize:" << pagesize << "curpage:" << curpage;
+    QByteArray pagearray;
+    if(dbfile.isOpen())
+        dbfile.close();
+    dbfile.setFileName(curfilepath);
+    dbfile.open(QIODevice::ReadOnly);
+    if(dbfile.isOpen())
+    {
+        dbfile.seek((curpage - 1) * pagesize);
+        //qDebug() << "dbfile offset:" << dbfile.pos();
+        pagearray = dbfile.read(pagesize);
+        dbfile.close();
+    }
+    if(curpage == 1)
+    {
+        QByteArray pghdrarray = pagearray.left(100);
+        ParseHeader(&pghdrarray);
+        PopulateHeader();
+    }
+    ParsePageHeader(&pagearray, filetype, curpage);
+    QString offsetcontent = "";
+    QString hexcontent = "";
+    QString utf8content = "";
+    int linecount = pagearray.size() / 16;
+
+    ui->editscrollbar->setMaximum(linecount - 1);
+    ui->editscrollbar->setMinimum(0);
+    ui->editscrollbar->setSingleStep(1);
+
+    for(int i=0; i < linecount; i++)
+    {
+        offsetcontent += QString::number(i*16, 16).rightJustified(5, '0') + "\n";
+        for(int j=0; j < 16; j++)
+        {
+            hexcontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper();
+            if(j < 15)
+            {
+                hexcontent += " ";
+            }
+            QChar curchar = QChar(pagearray.at(j+i*16));
+            if(!curchar.isPrint())
+                utf8content += ".";
+            else
+                utf8content += curchar;
+        }
+        hexcontent += "\n";
+        utf8content += "\n";
+    }
+    ui->offsetedit->setPlainText(offsetcontent);
+    ui->hexedit->setPlainText(hexcontent);
+    ui->utf8edit->setPlainText(utf8content);
+
+    offsetcontent = "";
+    hexcontent = "";
+    utf8content = "";
+     */ 
+}
+
+void WombatSqlite::ParseHeader(uint8_t* pageheader)
+{
+    //std::cout << "filetype: " << filetype << std::endl;
+    //std::cout << "page hedaer: " << pageheader[0] << pageheader[1] << std::endl;
+    if(filetype == '1') // WAL
+    {
+        /*
+        walheader.header = qFromBigEndian<quint32>(pageheader->mid(0, 4));
+        walheader.fileversion = qFromBigEndian<quint32>(pageheader->mid(4, 4));
+        walheader.pagesize = qFromBigEndian<quint32>(pageheader->mid(8, 4));
+        walheader.checkptseqnum = qFromBigEndian<quint32>(pageheader->mid(12, 4));
+        walheader.salt1 = qFromBigEndian<quint32>(pageheader->mid(16, 4));
+        walheader.salt2 = qFromBigEndian<quint32>(pageheader->mid(20, 4));
+        walheader.checksum1 = qFromBigEndian<quint32>(pageheader->mid(24, 4));
+        walheader.checksum2 = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+        */
+    }
+    else if(filetype == '2') // JOURNAL
+    {
+        /*
+	journalheader.header = qFromBigEndian<quint64>(pageheader->mid(0,8));
+	journalheader.pagecnt = qFromBigEndian<quint32>(pageheader->mid(8, 4));
+	journalheader.randomnonce = qFromBigEndian<quint32>(pageheader->mid(12, 4));
+	journalheader.initsize = qFromBigEndian<quint32>(pageheader->mid(16, 4));
+	journalheader.sectorsize = qFromBigEndian<quint32>(pageheader->mid(20, 4));
+	journalheader.pagesize = qFromBigEndian<quint32>(pageheader->mid(24, 4));
+        */
+    }
+    else if(filetype == '3') // SQLITE DB
+    {
+        sqliteheader.header = FXString((char*)substr(pageheader, 0, 16));
+        //std::cout << "page header: " << substr(pageheader, 0, 16)[0] << std::endl;
+        //std::cout << "sqlite header:" << sqliteheader.header.text() << std::endl;
+        /*
+	sqliteheader.header = QString::fromStdString(pageheader->mid(0, 16).toStdString());
+	sqliteheader.pagesize = qFromBigEndian<quint16>(pageheader->mid(16, 2));
+	sqliteheader.writeversion = qFromBigEndian<quint8>(pageheader->mid(18, 1));
+	sqliteheader.readversion = qFromBigEndian<quint8>(pageheader->mid(19, 1));
+	sqliteheader.unusedpagespace = qFromBigEndian<quint8>(pageheader->mid(20, 1));
+	sqliteheader.pagecount = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+	sqliteheader.firstfreepagenum = qFromBigEndian<quint32>(pageheader->mid(32, 4));
+	sqliteheader.freepagescount = qFromBigEndian<quint32>(pageheader->mid(36, 4));
+	sqliteheader.schemacookie = qFromBigEndian<quint32>(pageheader->mid(40, 4));
+	sqliteheader.schemaformat = qFromBigEndian<quint32>(pageheader->mid(44, 4));
+	sqliteheader.pagecachesize = qFromBigEndian<quint32>(pageheader->mid(48, 4));
+	sqliteheader.largestrootbtreepagenumber = qFromBigEndian<quint32>(pageheader->mid(52, 4));
+	sqliteheader.textencoding = qFromBigEndian<quint32>(pageheader->mid(56, 4));
+	sqliteheader.userversion = qFromBigEndian<quint32>(pageheader->mid(60, 4));
+	sqliteheader.incrementalvacuummodebool = qFromBigEndian<quint32>(pageheader->mid(64, 4));
+	sqliteheader.appid = qFromBigEndian<quint32>(pageheader->mid(68, 4));
+	sqliteheader.versionvalidfornum = qFromBigEndian<quint32>(pageheader->mid(92, 4));
+	sqliteheader.version = qFromBigEndian<quint32>(pageheader->mid(96, 4));
+        */
+    }
 }
 
     /*

@@ -12,6 +12,15 @@ std::string ConvertUnixTimeToHuman(uint32_t unixtime)
 }
 */
 
+uint8_t* substr(uint8_t* arr, int begin, int len)
+{
+    uint8_t* res = new uint8_t[len + 1];
+    for (int i = 0; i < len; i++)
+        res[i] = *(arr + begin + i);
+    res[len] = 0;
+    return res;
+}
+
 void ReadContent(std::ifstream* rawcontent, uint8_t* tmpbuf, uint64_t offset, uint64_t size)
 {
     rawcontent->seekg(offset);
