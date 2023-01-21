@@ -996,7 +996,8 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
 {
     uint64_t curpos = 0;
     uint64_t cellarrayoffset = 0;
-    uint rowcnt = 0;
+    FXArray<uint16_t> celloffsetarray;
+    //uint rowcnt = 0;
     if(curpage == 1)
     {
         if((uint)filetype == 0x01) // WAL
@@ -1005,7 +1006,7 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
             curpos = 28;
         else if((uint)filetype == 0x03) // DB
             curpos = 100;
-        rowcnt = proptable->getNumRows();
+        //rowcnt = proptable->getNumRows();
     }
     if((uint)filetype == 0x01) // WAL
     {
@@ -1015,6 +1016,9 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
         ReadInteger(pagearray, curpos + 12, &frameheader.salt2);
         ReadInteger(pagearray, curpos + 16, &frameheader.checksum1);
         ReadInteger(pagearray, curpos + 20, &frameheader.checksum1);
+        //qDebug() << "frameheader:" << frameheader.pagenumber << frameheader.pagecount << frameheader.salt1 << frameheader.salt2 << frameheader.checksum1 << frameheader.checksum2;
+        // AFTER THE FRAMEHEADER IS A PAGE, WHICH IS THE PAGESIZE OF THE DB PAGESIZE FROM THE FRAMEHEADER, SO I NEED TO REDO THE
+        // HEX DISPLAY AND PAGE DISPLAY FOR THE WAL FILES...
     }
     else if((uint)filetype == 0x02) // JOURNAL
     {
@@ -1026,59 +1030,53 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
         ReadInteger(pagearray, curpos + 3, &pageheader.cellcount);
         ReadInteger(pagearray, curpos + 5, &pageheader.cellcontentstart);
         pageheader.fragmentedfreebytescount = pagearray[curpos, 7];
+        proptablerowcnt += 5;
+        /*
         proptable->setTableSize(rowcnt + 5, 3);
         AddProperty(rowcnt, FXString::value(curpos) + ", 1", "0x" + FXString::value(pageheader.type, 16), "Page Type: 0x02 | 0x05 - Index | Table Interior, 0x0d | 0x0d - Index | Table Leaf, any other value is error.");
         AddProperty(rowcnt + 1, FXString::value(curpos + 1) + ", 2", FXString::value(pageheader.firstfreeblock), "Start of the first free block on the page or zero for no free blocks");
         AddProperty(rowcnt + 2, FXString::value(curpos + 3) + ", 2", FXString::value(pageheader.cellcount), "Number of cells on the page");
         AddProperty(rowcnt + 3, FXString::value(curpos + 5) + ", 2", FXString::value(pageheader.cellcontentstart), "Start of the cell content area, zero represents 65536");
         AddProperty(rowcnt + 4, FXString::value(curpos + 7) + ", 1", FXString::value(pageheader.fragmentedfreebytescount), "Number of fragmented free bytes within cell content area");
-        std::cout << "pagehader.type: " << std::hex << (uint)pageheader.type << std::endl;
+        */
+        //std::cout << "pagehader.type: " << std::hex << (uint)pageheader.type << std::endl;
+        cellarrayoffset = curpos + 8;
         if((uint)pageheader.type == 0x02 || (uint)pageheader.type == 0x05)
         {
             std::cout << "interior table/leaf" << std::endl;
+            proptablerowcnt += 1;
+            ReadInteger(pagearray, curpos + 8, &pageheader.rightmostpagenumber);
+            cellarrayoffset = curpos + 12;
+            //AddProperty(rowcnt + 5, FXString::value(curpos + 8) + ", 4", FXString::value(pageheader.rightmostpagenumber), "Largest page number, right most pointer");
         }
-        //ReadInteger(pagearray, curpos + 8, &pageheader.rightmostpagenumber);
-        //AddProperty(rowcnt + 5
-
+        // Parse cell pointers and rows here
+        celloffsetarray.clear();
+        if(pageheader.cellcount > 0)
+        {
+            proptablerowcnt += pageheader.cellcount;
+            for(int i=0; i < pageheader.cellcount; i++)
+            {
+                uint16_t tmpoff = 0;
+                ReadInteger(pagearray, cellarrayoffset + 2*i, &tmpoff);
+                celloffsetarray.append(tmpoff);
+                //AddProperty(rowcnt + i, FXString::value(cellarrayoffset + 2*i) + ", 2", FXString::value(tmpoff), "Cell Array Offset " + FXString::value(i+1));
+            }
+        }
     }
+    ParseRowContents(pagearray, &celloffsetarray);
+}    
+
+void WombatSqlite::ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* celloffsetarray)
+{
     /*
      * TOO MUCH IN THIS FUNCTION, NEED TO BREAK IT OUT FOR SIMPLICITY
      *
-    if(filetype == 1) // WAL
-    {
-        qDebug() << "frameheader:" << frameheader.pagenumber << frameheader.pagecount << frameheader.salt1 << frameheader.salt2 << frameheader.checksum1 << frameheader.checksum2;
-        // AFTER THE FRAMEHEADER IS A PAGE, WHICH IS THE PAGESIZE OF THE DB PAGESIZE FROM THE FRAMEHEADER, SO I NEED TO REDO THE
-        // HEX DISPLAY AND PAGE DISPLAY FOR THE WAL FILES...
-    }
-    else if(filetype == 2) // JOURNAL
-    {
-    }
-    else if(filetype == 3) // SQLITE DB
-    {
-        cellarrayoff = curpos + 8;
-        if(pageheader.type == 0x02 || pageheader.type == 0x05)
-        {
-            pageheader.rightmostpagenumber = qFromBigEndian<quint32>(pagearray->mid(curpos + 8, 4));
-            ui->propwidget->setRowCount(rowcnt + 6);
-            AddProperty(rowcnt + 5, QString::number(curpos + 8) + ", 4", QString::number(pageheader.rightmostpagenumber), "Largest page number, right most pointer.");
-            cellarrayoff = curpos + 12;
-        }
         ui->propwidget->resizeColumnToContents(2);
-        //qDebug() << "cell pointer array offset:" << cellarrayoff;
-        // Parse Cell Pointers and rows here...
-        rowcnt = ui->propwidget->rowCount();
-        QList<quint16> celloffarray;
-        celloffarray.clear();
+        // also need to justify
+
+        // PARSING ROW CONTENT, WHICH I SHOULD DO IN A DIFFERENT FUNCTION
         if(pageheader.cellcount > 0)
         {
-            ui->propwidget->setRowCount(rowcnt + pageheader.cellcount);
-            //ui->tablewidget->setRowCount(pageheader.cellcount);
-            for(int i=0; i < pageheader.cellcount; i++)
-            {
-                celloffarray.append(qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2)));
-                AddProperty(rowcnt + i, QString::number(cellarrayoff + 2*i) + ", 2", QString::number(qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2))), "Cell Array Offset " + QString::number(i+1) + ".");
-                //qDebug() << "cell array " + QString::number(i) + " offset:" << qFromBigEndian<quint16>(pagearray->mid(cellarrayoff + 2*i, 2));
-            }
             uint curtmprow = 0;
             QString tmprowid = "";
             ui->tablewidget->setRowCount(celloffarray.count() * 2);
