@@ -197,6 +197,7 @@ class WombatSqlite : public FXMainWindow
         uint GetVarInt(uint8_t* pagearray, uint64_t pageoffset, uint varintlength);
         uint64_t GetSerialType(uint64_t contentoffset, FXString* tmptype, FXString* tmpval, FXString* tmpofflen, uint8_t* pagearray, int serialtype);
         void LoadPage(void);
+        void PopulatePageContent(uint8_t* pagearray);
         void ParseFileHeader(uint8_t* pageheader);
         void PopulateFileHeader(void);
         void ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint64_t curpage);

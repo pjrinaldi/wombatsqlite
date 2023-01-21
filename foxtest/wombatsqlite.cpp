@@ -855,6 +855,7 @@ void WombatSqlite::LoadPage()
         //PopulateFileHeader();
     }
     ParsePageHeader(pagebuf, filetype, curpage);
+    PopulatePageContent(pagebuf);
 
 
     //std::cout << "content: " << pagebuf[0] << std::endl;
@@ -902,6 +903,166 @@ void WombatSqlite::LoadPage()
     offsetcontent = "";
     hexcontent = "";
     utf8content = "";
+     */ 
+}
+
+void WombatSqlite::PopulatePageContent(uint8_t* pagearray)
+{
+    FXString offsetcontent = "";
+    FXString hexcontent = "";
+    FXString asciicontent = "";
+    int linecount = pagesize / 16;
+    int linerem = pagesize % 16;
+    if(linerem > 0)
+        linecount++;
+    asciitext->verticalScrollBar()->setRange(0, linecount - 1);
+    asciitext->verticalScrollBar()->setLine(1);
+    // OFFSET CONTENT
+    std::stringstream os;
+    for(int i=0; i < linecount; i++)
+        os << std::hex << std::setfill('0') << std::setw(5) << i * 16 << "\n";
+    offsetcontent = FXString(os.str().c_str());
+    offsettext->setText(offsetcontent);
+    // HEX CONTENT
+    std::stringstream hs;
+    for(int i=0; i < linecount; i++)
+    {
+        for(int j=0; j < 16; j++)
+        {
+            if(j+i*16 < pagesize)
+                hs << std::hex << std::setfill('0') << std::setw(2) << (uint)pagearray[j+i*16] << " ";
+            else
+                hs << "   ";
+        }
+        hs << "\n";
+    }
+    hexcontent = FXString(hs.str().c_str());
+    hextext->setText(hexcontent);
+    // ASCII CONTENT
+    std::stringstream as;
+    for(int i=0; i < linecount; i++)
+    {
+        for(int j=0; j < 16; j++)
+        {
+            if(j+i*16 < pagesize)
+            {
+                if(isprint(pagearray[j+i*16]))
+                    asciicontent += FXchar(reinterpret_cast<unsigned char>(pagearray[j+i*16]));
+                else
+                    asciicontent += ".";
+            }
+        }
+        asciicontent += "\n";
+    }
+    asciitext->setText(asciicontent);
+    /*
+        for(int i=0; i < linecount; i++)
+        {
+            std::stringstream ss;
+            ss << std::hex << std::setfill('0') << std::setw(8) << i * 16 << "\t";
+            valuedata += FXString(ss.str().c_str()).upper();
+            for(int j=0; j < 16; j++)
+            {
+                if(j+i*16 < datasize)
+                {
+                    if(isprint(data[j+i*16]))
+                        valuedata += FXchar(reinterpret_cast<unsigned char>(data[j+i*16]));
+                    else
+                        valuedata += ".";
+                }
+            }
+            valuedata += "\n";
+        }
+
+    ui->editscrollbar->setMaximum(linecount - 1);
+    ui->editscrollbar->setMinimum(0);
+    ui->editscrollbar->setSingleStep(1);
+
+    for(int i=0; i < linecount; i++)
+    {
+        offsetcontent += QString::number(i*16, 16).rightJustified(5, '0') + "\n";
+        for(int j=0; j < 16; j++)
+        {
+            hexcontent += QString("%1").arg((quint8)pagearray.at(j+i*16), 2, 16, QChar('0')).toUpper();
+            if(j < 15)
+            {
+                hexcontent += " ";
+            }
+            QChar curchar = QChar(pagearray.at(j+i*16));
+            if(!curchar.isPrint())
+                utf8content += ".";
+            else
+                utf8content += curchar;
+        }
+        hexcontent += "\n";
+        utf8content += "\n";
+    }
+    ui->offsetedit->setPlainText(offsetcontent);
+    ui->hexedit->setPlainText(hexcontent);
+    ui->utf8edit->setPlainText(utf8content);
+
+    offsetcontent = "";
+    hexcontent = "";
+    utf8content = "";
+    */
+
+    /*
+    valuedata += "\n\nBinary Content\n--------------\n\n";
+    if(datasize < 16)
+    {
+        valuedata += "0000\t";
+        std::stringstream ss;
+        ss << std::hex << std::setfill('0');
+        //for(int i=0; i < datasize; i++)
+        for(int i=0; i < 16; i++)
+            if(i < datasize)
+                ss << std::setw(2) << ((uint)data[i]) << " ";
+            else
+                ss << "   ";
+        valuedata += FXString(ss.str().c_str()).upper();
+        for(int i=0; i < datasize; i++)
+        //for(int i=0; i < 16; i++)
+        {
+            if(isprint(data[i]))
+                valuedata += FXchar(reinterpret_cast<unsigned char>(data[i]));
+            else
+                valuedata += ".";
+        }
+        valuedata += "\n";
+    }
+    else
+    {
+        int linecount = datasize / 16;
+        int linerem = datasize % 16;
+        if(linerem > 0)
+            linecount++;
+        for(int i=0; i < linecount; i++)
+        {
+            std::stringstream ss;
+            ss << std::hex << std::setfill('0') << std::setw(8) << i * 16 << "\t";
+            for(int j=0; j < 16; j++)
+            {
+                if(j+i*16 < datasize)
+                    ss << std::setw(2) << ((uint)data[j+i*16]) << " ";
+                else
+                    ss << "   ";
+            }
+            valuedata += FXString(ss.str().c_str()).upper();
+            for(int j=0; j < 16; j++)
+            {
+                if(j+i*16 < datasize)
+                {
+                    if(isprint(data[j+i*16]))
+                        valuedata += FXchar(reinterpret_cast<unsigned char>(data[j+i*16]));
+                    else
+                        valuedata += ".";
+                }
+            }
+            valuedata += "\n";
+        }
+    }
+    plaintext->setText(valuedata);
+
      */ 
 }
 
