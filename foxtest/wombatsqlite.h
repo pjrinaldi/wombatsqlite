@@ -128,7 +128,6 @@ class WombatSqlite : public FXMainWindow
         std::vector<std::string> tags;
         FXArray<FXString> taggedlist;
         std::ifstream filebuffer;
-        std::ifstream* filebufptr;
         FXArray<FXString> fileuserdata;
         FXString curfileuserdata;
         Viewer* viewer;
@@ -137,6 +136,7 @@ class WombatSqlite : public FXMainWindow
         uint64_t pagecount = 0;
         uint32_t pagesize = 0;
         uint64_t curpage = 0;
+        int proptablerowcnt = 0;
         JournalHeader journalheader;
         WalHeader walheader;
         SqliteHeader sqliteheader;
@@ -194,6 +194,7 @@ class WombatSqlite : public FXMainWindow
         void ParseFileHeader(uint8_t* pageheader);
         void PopulateFileHeader(void);
         void ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint64_t curpage);
+        void PopulatePropertyTable(void);
         void AddProperty(int row, FXString offlen, FXString val, FXString desc);
         void AddContent(int row, FXString islive, FXString rowid, FXString offlen, FXString type, FXString val, FXString tag);
         void AlignColumn(FXTable* curtable, int row, FXuint justify);

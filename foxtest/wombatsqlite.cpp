@@ -702,47 +702,47 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
         prevsqlitepath = sqlitefilepath;
         filetype = 0;
         filebuffer.open(sqlitefilepath.text(), std::ios::in|std::ios::binary);
-        filebufptr = &filebuffer;
-        filebufptr->seekg(0, filebuffer.end);
-        filesize = filebufptr->tellg();
-        filebufptr->seekg(0, filebuffer.beg);
+        filebuffer.seekg(0, filebuffer.beg);
+        filebuffer.seekg(0, filebuffer.end);
+        filesize = filebuffer.tellg();
+        filebuffer.seekg(0, filebuffer.beg);
         uint32_t sqlheader = 0;
-        ReadContent(filebufptr, &sqlheader, 0);
+        ReadContent(&filebuffer, &sqlheader, 0);
         //std::cout << "sql header:" << std::hex << sqlheader << std::endl;
 
         if(sqlheader == 0x377f0682 || sqlheader == 0x377f0683) // WAL
         {
             filetype = 1; // WAL
-            ReadContent(filebufptr, &pagesize, 8);
+            ReadContent(&filebuffer, &pagesize, 8);
             //std::cout << "WAL page size:" << pagesize << std::endl;
         }
         else
         {
             uint64_t journalheader = 0;
-            ReadContent(filebufptr, &journalheader, 0);
+            ReadContent(&filebuffer, &journalheader, 0);
             //std::cout << "journalheader: " << std::hex << journalheader << std::endl;
             if(journalheader == 0xd9d505f920a163d7) // JOURNAL
             {
                 filetype = 2; // JOURNAL
-                ReadContent(filebufptr, &pagesize, 24);
+                ReadContent(&filebuffer, &pagesize, 24);
                 //std::cout << "page size:" << pagesize << std::endl;
             }
             else
             {
                 char* sqliteheader = new char[15];
-                filebufptr->seekg(0);
-                filebufptr->read(sqliteheader, 15);
+                filebuffer.seekg(0);
+                filebuffer.read(sqliteheader, 15);
                 if(FXString(sqliteheader) == "SQLite format 3") // SQLITE DB
                 {
                     filetype = 3; // SQLITE DB
                     uint16_t ps = 0;
-                    ReadContent(filebufptr, &ps, 16);
+                    ReadContent(&filebuffer, &ps, 16);
                     pagesize = ps;
                     //std::cout << "pagesize: " << pagesize << std::endl;
                 }
             }
         }
-        if(filetype > 0)
+        if((uint)filetype > 0)
         {
             sqlitefiles.append(sqlitefilepath);
             pagecount = filesize / pagesize;
@@ -782,7 +782,7 @@ long WombatSqlite::FileSelected(FXObject*, FXSelector, void*)
     //std::cout << curfileuserdata.text() << std::endl;
     lfound = curfileuserdata.find_first_of("|");
     rfound = curfileuserdata.find_last_of("|");
-    filetype = (uint8_t)curfileuserdata.mid(0, lfound).at(0);
+    filetype = (uint8_t)curfileuserdata.mid(0, lfound).toUInt();
     pagesize = curfileuserdata.mid(lfound+1, rfound-1).toULong();
     curpage = curfileuserdata.mid(rfound+1, curfileuserdata.length() - rfound - 1).toULong();
     pagespinner->setValue(curpage);
@@ -798,12 +798,21 @@ void WombatSqlite::LoadPage()
 {
     //std::cout << "curpage: " << curpage << " filetype: " << filetype << std::endl;
     uint8_t* pagebuf = new uint8_t[pagesize];
-    ReadContent(filebufptr, pagebuf, (curpage - 1) * pagesize, pagesize);
+    ReadContent(&filebuffer, pagebuf, (curpage - 1) * pagesize, pagesize);
+    filebuffer.close();
+
     if(curpage == 1)
     {
         uint8_t* pageheader = substr(pagebuf, 0, 100);
         ParseFileHeader(pageheader);
-        PopulateFileHeader();
+        if((uint)filetype == 0x01)
+            proptablerowcnt = 8;
+        else if((uint)filetype == 0x02)
+            proptablerowcnt = 6;
+        else if((uint)filetype == 0x03)
+            proptablerowcnt = 18;
+        //std::cout << "prop table row cnt: " << proptablerowcnt << std::endl;
+        //PopulateFileHeader();
     }
     ParsePageHeader(pagebuf, filetype, curpage);
 
@@ -860,7 +869,7 @@ void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
 {
     //std::cout << "filetype: " << filetype << std::endl;
     //std::cout << "page hedaer: " << pageheader[0] << pageheader[1] << std::endl;
-    if(filetype == '1') // WAL
+    if((uint)filetype == 0x01) // WAL
     {
         ReadInteger(pageheader, 0, &walheader.header);
         ReadInteger(pageheader, 4, &walheader.fileversion);
@@ -871,7 +880,7 @@ void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
         ReadInteger(pageheader, 24, &walheader.checksum1);
         ReadInteger(pageheader, 28, &walheader.checksum2);
     }
-    else if(filetype == '2') // JOURNAL
+    else if((uint)filetype == 0x02) // JOURNAL
     {
         ReadInteger(pageheader, 0, &journalheader.header);
         ReadInteger(pageheader, 8, &journalheader.pagecnt);
@@ -880,7 +889,7 @@ void WombatSqlite::ParseFileHeader(uint8_t* pageheader)
         ReadInteger(pageheader, 20, &journalheader.sectorsize);
         ReadInteger(pageheader, 24, &journalheader.pagesize);
     }
-    else if(filetype == '3') // SQLITE DB
+    else if((uint)filetype == 0x03) // SQLITE DB
     {
         sqliteheader.header = FXString((char*)substr(pageheader, 0, 16));
         ReadInteger(pageheader, 16, &sqliteheader.pagesize);
@@ -925,16 +934,16 @@ void WombatSqlite::AddProperty(int row, FXString offlen, FXString val, FXString 
 
 void WombatSqlite::PopulateFileHeader()
 {
-    if(filetype == '1')
+    if((uint)filetype == 0x01)
         proptable->setTableSize(8, 3);
-    else if(filetype == '2')
+    else if((uint)filetype == 0x02)
         proptable->setTableSize(6, 3);
-    else if(filetype == '3')
+    else if((uint)filetype == 0x03)
         proptable->setTableSize(18, 3);
     proptable->setColumnText(0, "Offset, Length");
     proptable->setColumnText(1, "Value");
     proptable->setColumnText(2, "Description");
-    if(filetype == '1') // WAL
+    if((uint)filetype == 0x01) // WAL
     {
         std::stringstream ss;
         ss << std::hex << std::setfill('0') << std::setw(8) << walheader.header;
@@ -947,7 +956,7 @@ void WombatSqlite::PopulateFileHeader()
         AddProperty(6, "24, 4", FXString::value(walheader.checksum1), "WAL Checksum 1");
         AddProperty(7, "28, 4", FXString::value(walheader.checksum2), "WAL Checksum 2");
     }
-    else if(filetype == '2') // JOURNAL
+    else if((uint)filetype == 0x02) // JOURNAL
     {
         std::stringstream ss;
         ss << std::hex << std::setfill('0') << std::setw(8) << journalheader.header;
@@ -958,7 +967,7 @@ void WombatSqlite::PopulateFileHeader()
         AddProperty(4, "20, 4", FXString::value(journalheader.sectorsize), "Journal Sector Size");
         AddProperty(5, "24, 4", FXString::value(journalheader.pagesize), "Journal Page Size");
     }
-    else if(filetype == '3') // DB
+    else if((uint)filetype == 0x03) // DB
     {
         AddProperty(0, "0, 16", sqliteheader.header, "SQLite Header");
         AddProperty(1, "16, 2", FXString::value(sqliteheader.pagesize), "SQLite Page Size");
@@ -990,15 +999,15 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
     uint rowcnt = 0;
     if(curpage == 1)
     {
-        if(filetype == '1') // WAL
+        if((uint)filetype == 0x01) // WAL
             curpos = 32;
-        else if(filetype == '2') // JOURNAL
+        else if((uint)filetype == 0x02) // JOURNAL
             curpos = 28;
-        else if(filetype == '3') // DB
+        else if((uint)filetype == 0x03) // DB
             curpos = 100;
         rowcnt = proptable->getNumRows();
     }
-    if(filetype == '1') // WAL
+    if((uint)filetype == 0x01) // WAL
     {
         ReadInteger(pagearray, curpos, &frameheader.pagenumber);
         ReadInteger(pagearray, curpos + 4, &frameheader.pagecount);
@@ -1007,10 +1016,10 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
         ReadInteger(pagearray, curpos + 16, &frameheader.checksum1);
         ReadInteger(pagearray, curpos + 20, &frameheader.checksum1);
     }
-    else if(filetype == '2') // JOURNAL
+    else if((uint)filetype == 0x02) // JOURNAL
     {
     }
-    else if(filetype == '3') // DB
+    else if((uint)filetype == 0x03) // DB
     {
         pageheader.type = pagearray[curpos];
         ReadInteger(pagearray, curpos + 1, &pageheader.firstfreeblock);
