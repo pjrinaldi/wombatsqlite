@@ -1063,8 +1063,17 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
             }
         }
     }
+    PopulatePropertyTable(&celloffsetarray);
     ParseRowContents(pagearray, &celloffsetarray);
 }    
+
+void WombatSqlite::PopulatePropertyTable(FXArray<uint16_t>* celloffsetarray)
+{
+    std::cout << "prop table row cnt: " << proptablerowcnt << std::endl;
+    std::cout << "cur page: " << curpage << std::endl;
+    std::cout << "filetype: " << std::hex << "0x" << (uint)filetype << std::endl;
+    // need proptablerowcnt and curpage, filetype, pageheader, fileheader, etc..
+}
 
 void WombatSqlite::ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* celloffsetarray)
 {
