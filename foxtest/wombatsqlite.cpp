@@ -1012,18 +1012,31 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
     }
     else if(filetype == '3') // DB
     {
+        pageheader.type = pagearray[curpos];
+        ReadInteger(pagearray, curpos + 1, &pageheader.firstfreeblock);
+        ReadInteger(pagearray, curpos + 3, &pageheader.cellcount);
+        ReadInteger(pagearray, curpos + 5, &pageheader.cellcontentstart);
+        pageheader.fragmentedfreebytescount = pagearray[curpos, 7];
+        proptable->setTableSize(rowcnt + 5, 3);
+        AddProperty(rowcnt, FXString::value(curpos) + ", 1", "0x" + FXString::value(pageheader.type, 16), "Page Type: 0x02 | 0x05 - Index | Table Interior, 0x0d | 0x0d - Index | Table Leaf, any other value is error.");
+        AddProperty(rowcnt + 1, FXString::value(curpos + 1) + ", 2", FXString::value(pageheader.firstfreeblock), "Start of the first free block on the page or zero for no free blocks");
+        AddProperty(rowcnt + 2, FXString::value(curpos + 3) + ", 2", FXString::value(pageheader.cellcount), "Number of cells on the page");
+        AddProperty(rowcnt + 3, FXString::value(curpos + 5) + ", 2", FXString::value(pageheader.cellcontentstart), "Start of the cell content area, zero represents 65536");
+        AddProperty(rowcnt + 4, FXString::value(curpos + 7) + ", 1", FXString::value(pageheader.fragmentedfreebytescount), "Number of fragmented free bytes within cell content area");
+        std::cout << "pagehader.type: " << std::hex << (uint)pageheader.type << std::endl;
+        if((uint)pageheader.type == 0x02 || (uint)pageheader.type == 0x05)
+        {
+            std::cout << "interior table/leaf" << std::endl;
+        }
+        //ReadInteger(pagearray, curpos + 8, &pageheader.rightmostpagenumber);
+        //AddProperty(rowcnt + 5
+
     }
     /*
      * TOO MUCH IN THIS FUNCTION, NEED TO BREAK IT OUT FOR SIMPLICITY
      *
     if(filetype == 1) // WAL
     {
-        frameheader.pagenumber = qFromBigEndian<quint32>(pagearray->mid(curpos, 4));
-        frameheader.pagecount = qFromBigEndian<quint32>(pagearray->mid(curpos + 4, 4));
-        frameheader.salt1 = qFromBigEndian<quint32>(pagearray->mid(curpos + 8, 4));
-        frameheader.salt2 = qFromBigEndian<quint32>(pagearray->mid(curpos + 12, 4));
-        frameheader.checksum1 = qFromBigEndian<quint32>(pagearray->mid(curpos + 16, 4));
-        frameheader.checksum2 = qFromBigEndian<quint32>(pagearray->mid(curpos + 24, 4));
         qDebug() << "frameheader:" << frameheader.pagenumber << frameheader.pagecount << frameheader.salt1 << frameheader.salt2 << frameheader.checksum1 << frameheader.checksum2;
         // AFTER THE FRAMEHEADER IS A PAGE, WHICH IS THE PAGESIZE OF THE DB PAGESIZE FROM THE FRAMEHEADER, SO I NEED TO REDO THE
         // HEX DISPLAY AND PAGE DISPLAY FOR THE WAL FILES...
@@ -1033,17 +1046,6 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
     }
     else if(filetype == 3) // SQLITE DB
     {
-        pageheader.type = qFromBigEndian<quint8>(pagearray->mid(curpos, 1));
-        pageheader.firstfreeblock = qFromBigEndian<quint16>(pagearray->mid(curpos + 1, 2));
-        pageheader.cellcount = qFromBigEndian<quint16>(pagearray->mid(curpos + 3, 2));
-        pageheader.cellcontentstart = qFromBigEndian<quint16>(pagearray->mid(curpos + 5, 2));
-        pageheader.fragmentedfreebytescount = qFromBigEndian<quint8>(pagearray->mid(curpos + 7, 1));
-        ui->propwidget->setRowCount(rowcnt + 5);
-        AddProperty(rowcnt, QString::number(curpos) + ", 1", "0x" + QString("%1").arg(pageheader.type, 2, 16, QChar('0')).toUpper(), "Page Type: 0x02 | 0x05 - Index | Table Interior, 0x0a | 0x0d - Index | Table Leaf, any other value is an error.");
-        AddProperty(rowcnt + 1, QString::number(curpos + 1) + ", 2", QString::number(pageheader.firstfreeblock), "Start of the first free block on the page or zero for no free blocks.");
-        AddProperty(rowcnt + 2, QString::number(curpos + 3) + ", 2", QString::number(pageheader.cellcount), "Number of cells on the page.");
-        AddProperty(rowcnt + 3, QString::number(curpos + 5) + ", 2", QString::number(pageheader.cellcontentstart), "Start of the cell content area, zero represents 65536.");
-        AddProperty(rowcnt + 4, QString::number(curpos + 7) + ", 1", QString::number(pageheader.fragmentedfreebytescount), "Number of fragmented free bytes within cell content area.");
         cellarrayoff = curpos + 8;
         if(pageheader.type == 0x02 || pageheader.type == 0x05)
         {
