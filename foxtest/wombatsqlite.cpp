@@ -92,6 +92,24 @@ void WombatSqlite::create()
     show(PLACEMENT_SCREEN);
 }
 
+long WombatSqlite::TableUp(FXObject*, FXSelector, void* ptr)
+{
+    int currow = proptable->getCurrentRow();
+    switch(((FXEvent*)ptr)->code)
+    {
+        case KEY_Up:
+            proptable->setCurrentItem(currow - 1, 0, true);
+	    proptable->selectRow(currow - 1, true);
+            break;
+        case KEY_Down:
+            proptable->setCurrentItem(currow + 1, 0, true);
+	    proptable->selectRow(currow + 1, true);
+            break;
+    }
+
+    return 1;
+}
+
 long WombatSqlite::TagMenu(FXObject*, FXSelector, void* ptr)
 {
     /*
