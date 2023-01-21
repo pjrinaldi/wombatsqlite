@@ -191,6 +191,9 @@ class WombatSqlite : public FXMainWindow
         FXString ConvertUnixTimeToString(uint32_t input);
         FXString DecryptRot13(FXString encstr);
         FXchar Rot13Char(FXchar curchar);
+        uint GetVarIntLength(uint8_t* pagearray, uint64_t pageoffset);
+        uint GetVarInt(uint8_t* pagearray, uint64_t pageoffset, uint varintlength);
+        void GetSerialType(uint64_t contentoffset, FXString* tmptype, FXString* tmpval, FXString* tmpofflen, uint8_t* pagearray, int serialtype);
         void LoadPage(void);
         void ParseFileHeader(uint8_t* pageheader);
         void PopulateFileHeader(void);

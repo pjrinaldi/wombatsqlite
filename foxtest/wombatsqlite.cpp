@@ -760,6 +760,7 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
                 }
             }
         }
+        filebuffer.close();
         if((uint)filetype > 0)
         {
             sqlitefiles.append(sqlitefilepath);
@@ -793,7 +794,10 @@ long WombatSqlite::FileSelected(FXObject*, FXSelector, void*)
     int found = tmpstr.find(" (");
     int lfound = tmpstr.find("[");
     int rfound = tmpstr.find("]");
-    curfilepath = tmpstr.mid(lfound+1, rfound-1) + tmpstr.mid(0, found);
+    curfilepath = tmpstr.mid(lfound+1, rfound - lfound - 1) + tmpstr.mid(0, found);
+    //std::cout << curfilepath.text() << std::endl;
+    filebuffer.open(curfilepath.text(), std::ios::in|std::ios::binary);
+    filebuffer.seekg(0, filebuffer.beg);
     //std::cout << tmpstr.mid(0, found).text() << std::endl;
     //std::cout << tmpstr.mid(lfound+1, rfound-1).text() << std::endl;
     //std::cout << curfilepath.text() << std::endl;
@@ -1138,11 +1142,6 @@ void WombatSqlite::PopulatePageHeader(FXArray<uint16_t>* celloffsetarray)
 
 void WombatSqlite::PopulatePropertyTable(FXArray<uint16_t>* celloffsetarray)
 {
-    /*
-    std::cout << "prop table row cnt: " << proptablerowcnt << std::endl;
-    std::cout << "cur page: " << curpage << std::endl;
-    std::cout << "filetype: " << std::hex << "0x" << (uint)filetype << std::endl;
-    */
     proptable->setTableSize(proptablerowcnt, 3);
     proptable->setColumnText(0, "Offset, Length");
     proptable->setColumnText(1, "Value");
@@ -1156,490 +1155,390 @@ void WombatSqlite::PopulatePropertyTable(FXArray<uint16_t>* celloffsetarray)
     AlignColumn(proptable, 2, FXTableItem::LEFT);
 }
 
+uint WombatSqlite::GetVarIntLength(uint8_t* pagearray, uint64_t pageoffset)
+{
+    bool getnextbyte = true;
+    uint length = 1;
+    while(getnextbyte == true)
+    {
+        uint8_t curbyte = 0;
+        curbyte = pagearray[pageoffset + length - 1];
+        //quint8 curbyte = qFromBigEndian<quint8>(pagearray->mid(pageoffset + length - 1, 1));
+        if((uint)curbyte >= 0x80)
+            length++;
+        else
+            getnextbyte = false;
+    }
+    return length;
+}
+
+uint WombatSqlite::GetVarInt(uint8_t* pagearray, uint64_t pageoffset, uint varintlength)
+{
+    FXArray<uint8_t> varbytes;
+    varbytes.clear();
+    /*
+    QByteArray varbytes;
+    varbytes.clear();
+    */
+    for(uint i=0; i < varintlength; i++)
+        varbytes.append(pagearray[pageoffset + i]);
+        //varbytes.append(pagearray->mid(pageoffset + i, 1));
+    //qDebug() << "pageoffset:" << pageoffset << "length:" << varintlength;
+    //qDebug() << "varbytes:" << varbytes.toHex() << "varbytes count:" << varbytes.count();
+    if(varintlength > 1)
+    {
+        uint i;
+        uint64_t x;
+        uint64_t uX = 0;
+        /*
+        quint64 x;
+        quint64 uX = 0;
+        */
+        for(i=0; i < varintlength && i < 9; i++)
+        {
+            x = (uint8_t)varbytes.at(i);
+            //x = (quint8)varbytes.at(i);
+            uX = (uX<<7) + (x&0x7f);
+            if((x&0x80)==0)
+                break;
+        }
+        if(i == 9 && i < varintlength)
+            uX = (uX<<8) + x;
+        i++;
+        //qDebug() << "varint:" << uX;
+        return uX;
+    }
+    else
+        return varbytes.at(0);
+        //return qFromBigEndian<quint8>(varbytes);
+}
+
+void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXString* tmpval, FXString* tmpofflen, uint8_t* pagearray, int serialtype)
+{
+    if(serialtype == 0) // col length is zero, so content length doesn't change
+    {
+        *tmptype = "0 - NULL";
+        *tmpval = "NULL";
+        //qDebug() << "NULL";
+    }
+    else if(serialtype == 1) // uint8_t (1)
+    {
+        *tmpofflen = FXString::value(contentoffset) + ", 1";
+        *tmptype = "1 - 8-bit int";
+        *tmpval = FXString::value((uint)(pagearray[contentoffset]));
+        //qDebug() << "1 byte" << qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1));
+        contentoffset++;
+    }
+    else if(serialtype == 2) // uint16_t (2)
+    {
+        *tmpofflen = FXString::value(contentoffset) + ", 2";
+        *tmptype = "2 - 16-bit int";
+        uint16_t tmp16 = 0;
+        ReadInteger(pagearray, contentoffset, &tmp16);
+        *tmpval = FXString::value(tmp16);
+        //qDebug() << "2 byte:" << qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2));
+        contentoffset = contentoffset + 2;
+    }
+    else if(serialtype == 3) // uint24_t (3)
+    {
+        *tmpofflen = FXString::value(contentoffset) + ", 3";
+        *tmptype = "3 - 24-bit int";
+        uint32_t tmp24 = __builtin_bswap32((uint32_t)pagearray[contentoffset] | (uint32_t)pagearray[contentoffset + 1] << 8 | (uint32_t)pagearray[contentoffset + 2] << 16);
+        *tmpval = FXString::value(tmp24);
+        //qDebug() << "3 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3));
+        contentoffset = contentoffset + 3;
+    }
+    else if(serialtype == 4) // uint32_t (4)
+    {
+        *tmpofflen = FXString::value(contentoffset) + ", 4";
+        *tmptype = "4 - 32-bit int";
+        uint32_t tmp32 = 0;
+        ReadInteger(pagearray, contentoffset, &tmp32);
+        *tmpval = FXString::value(tmp32);
+        //qDebug() << "4 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4));
+        contentoffset = contentoffset + 4;
+    }
+    else if(serialtype == 5) // uint48_t (6)
+    {
+        *tmpofflen = FXString::value(contentoffset) + ", 6";
+        *tmptype = "5 - 48-bit int";
+        uint64_t tmp48 = __builtin_bswap64((uint64_t)pagearray[contentoffset] | (uint64_t)pagearray[contentoffset + 1] << 8 | (uint64_t)pagearray[contentoffset + 2] << 16 | (uint64_t)pagearray[contentoffset + 3] << 24 | (uint64_t)pagearray[contentoffset + 4] << 32 | (uint64_t)pagearray[contentoffset + 5] << 40);
+        *tmpval = FXString::value(tmp48);
+        //qDebug() << "6 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6));
+        contentoffset = contentoffset + 6;
+    }
+    else if(serialtype == 6) // uint64_t (8)
+    {
+        *tmpofflen = FXString::value(contentoffset) + ", 8";
+        *tmptype = "6 - 64-bit int";
+        uint64_t tmp64 = 0;
+        ReadInteger(pagearray, contentoffset, &tmp64);
+        *tmpval = FXString::value(tmp64);
+        //qDebug() << "8 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8));
+        contentoffset = contentoffset + 8;
+    }
+    else if(serialtype == 7) // double (8)
+    {
+        *tmpofflen = FXString::value(contentoffset) + ", 8";
+        *tmptype = "7 - 64-bit double";
+        uint64_t tmp64 = 0;
+        ReadInteger(pagearray, contentoffset, &tmp64);
+        //double tmp64 = __builtin_bswap64((double)pagearray[contentoffset] | (double)pagearray[contentoffset + 1] << 8 | (double)pagearray[contentoffset + 2] << 16 | (double)pagearray[contentoffset + 3] << 24 | (double)pagearray[contentoffset + 4] << 32 | (double)pagearray[contentoffset + 5] << 40 | (double)pagearray[contentoffset + 6] << 48 | (double)pagearray[contentoffset + 7] << 56);
+        *tmpval = FXString::value((double)tmp64);
+        //qDebug() << "8 bytes:" << qFromBigEndian<double>(pagearray->mid(contentoffset, 8));
+        contentoffset = contentoffset + 8;
+    }
+    else if(serialtype == 8) // col length is zero, so content length doesn't change
+    {
+        *tmptype = "8 - Integer value 0";
+        *tmpval = "0";
+        //qDebug() << "0";
+    }
+    else if(serialtype == 9) // col length is zero, so content length doesn't change)
+    {
+        *tmptype = "9 - Integer value 1";
+        *tmpval = "1";
+        //qDebug() << "1";
+    }
+    else if(serialtype >= 12) // BLOB OR TEXT
+    {
+        if(serialtype % 2 == 0) // EVEN AND BLOB
+        {
+            *tmpofflen = FXString::value(contentoffset) + ", " + FXString::value((serialtype - 12) / 2);
+            *tmptype = ">=12 && even - BLOB";
+            std::stringstream ss;
+            ss << std::hex << std::setfill('0') << std::setw(2);
+            for(int i=contentoffset; i < ((serialtype - 12) / 2); i++)
+                ss << (uint)pagearray[i];
+            *tmpval = FXString(ss.str().c_str());
+            //*tmpval = FXString((char*)substr(pagearray, contentoffset, (serialtype - 12) / 2));
+            //tmpval = pagearray->mid(contentoffset, (serialtype - 12) / 2).toHex();
+            //qDebug() << "blob size:" << (serialtype - 12) / 2 << pagearray->mid(contentoffset, (curst-12) / 2).toHex();
+            contentoffset = contentoffset + ((serialtype - 12) / 2);
+        }
+        else // ODD AND TEXT
+        {
+            *tmpofflen = FXString::value(contentoffset) + ", " + FXString::value((serialtype - 13) / 2);
+            *tmptype = ">=13 & odd - TEXT";
+            *tmpval = FXString((char*)substr(pagearray, contentoffset, (serialtype - 13) / 2));
+            //*tmpval = QString::fromStdString(pagearray->mid(contentoffset, (serialtype - 13) / 2).toStdString());
+            //sqliteheader.header = FXString((char*)substr(pageheader, 0, 16));
+            //qDebug() << "Text Size:" << (serialtype - 13) / 2 << QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
+            contentoffset = contentoffset + ((serialtype - 13) / 2);
+        }
+    }
+}
+
 void WombatSqlite::ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* celloffsetarray)
 {
-    /*
-     * TOO MUCH IN THIS FUNCTION, NEED TO BREAK IT OUT FOR SIMPLICITY
-     *
-        ui->propwidget->resizeColumnToContents(2);
-        // also need to justify
-
-        // PARSING ROW CONTENT, WHICH I SHOULD DO IN A DIFFERENT FUNCTION
-        if(pageheader.cellcount > 0)
+    if(pageheader.cellcount > 0)
+    {
+        /*
+        tablelist->setTableSize(celloffsetarray->no() * 2, 6);
+        tablelist->setColumnText(0, "Tag");
+        tablelist->setColumnText(1, "Is Live");
+        tablelist->setColumnText(2, "Row ID");
+        tablelist->setColumnText(3, "Offset, Length");
+        tablelist->setColumnText(4, "Type");
+        tablelist->setColumnText(5, "Value");
+        */
+        int tmprow = 0;
+        FXString tmprowid = "";
+        for(int i=0; i < celloffsetarray->no(); i++)
         {
-            uint curtmprow = 0;
-            QString tmprowid = "";
-            ui->tablewidget->setRowCount(celloffarray.count() * 2);
-            for(int i=0; i < celloffarray.count(); i++)
+            if((uint)pageheader.type == 0x02) // index interior
             {
-                //qDebug() << "cell off array " + QString::number(i+1) + ":" << celloffarray.at(i);
-                if(pageheader.type == 0x02) // index interior
+                uint32_t pagenum = 0;
+                ReadInteger(pagearray, celloffsetarray->at(i), &pagenum);
+                FXString curidvalue = FXString::value(sqlfilelist->getCurrentItem()) + "," + FXString::value(curpage) + "," + FXString::value(tmprow);
+                FXString tagstr = "";
+                /* TAGGING, WILL DO LATER
+                for(int j=0; j < taggedlist.no(); j++)
                 {
-                    quint32 pagenum = qFromBigEndian<quint32>(pagearray->mid(celloffarray.at(i), 4));
-                    //qDebug() << "pagenum:" << pagenum;
-                    QString curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
-                    QString tagstr = "";
+                    if(taggeditems.at(j).contains(curidvalue))
+                        tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
+                }
+                */
+                AddContent(tmprow, "True", "", FXString::value(celloffsetarray->at(i)) + ", 4", "Page Number", FXString::value(pagenum), tagstr);
+                tmprow++;
+                uint payloadlength = GetVarIntLength(pagearray, celloffsetarray->at(i) + 4);
+                uint payloadsize = GetVarInt(pagearray, celloffsetarray->at(i) + 4, payloadlength);
+                tagstr = "";
+                curidvalue = FXString::value(sqlfilelist->getCurrentItem()) + "," + FXString::value(curpage) + "," + FXString::value(tmprow);
+                /* TAGGING TO IMPLEMENT LATER
+                for(int j=0; j < taggedlist.no(); j++)
+                {
+                    if(taggeditems.at(j).contains(curidvalue))
+                        tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
+                }
+                */
+                //sqliteheader.header = FXString((char*)substr(pageheader, 0, 16));
+                AddContent(tmprow, "True", "", FXString::value(celloffsetarray->at(i) + 4) + ", " + FXString::value(payloadsize), "Payload", FXString((char*)substr(pagearray, celloffsetarray->at(i) + 4 + payloadlength, payloadsize)), tagstr);
+                tmprow++;
+                /*
+                 * payload = 33, byte array 4, initial payload not in overflow - 27, 
+                uint recordlengthlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength);
+                uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength, recordlengthlength);
+                quint64 contentoffset = celloffarray.at(i) + payloadlength + recordlength;
+                QList<int> serialtypes;
+                serialtypes.clear();
+                QByteArray serialarray = pagearray->mid(celloffarray.at(i) + payloadlength + recordlengthlength, recordlength - recordlengthlength);
+                //qDebug() << "serialarray:" << serialarray.toHex() << "serialarray.count:" << serialarray.count();
+                uint curserialtypelength = 0;
+                while(curserialtypelength < serialarray.count())
+                {
+                    uint curstlen = GetVarIntLength(&serialarray, curserialtypelength);
+                    uint curst = GetVarInt(&serialarray, curserialtypelength, curstlen);
+                    curserialtypelength += curstlen;
+                    serialtypes.append(GetSerialType(curst));
+                }
+                if(i == 0)
+                {
+                    uint tmprowcnt = serialtypes.count() * celloffarray.count();
+                    ui->tablewidget->setRowCount(tmprowcnt);
+                }
+                for(int j=0; j < serialtypes.count(); j++)
+                {
+                    uint curst = serialtypes.at(j);
+                    QString tmpofflen = "";
+                    QString tmptype = "";
+                    QString tmpval = "";
+                    GetSerialType(contentoffset, &tmptype, &tmpval, &tmpofflen, pagearray, serialtypes.at(j));
+                    //qDebug() << "curtmprow:" << curtmprow;
+                    AddContent(curtmprow, "True", "", tmpofflen, tmptype, tmpval);
+                    curtmprow++;
+                }
+                */
+            }
+            else if((uint)pageheader.type == 0x05) // table interior
+            {
+                uint32_t pagenum = 0;
+                ReadInteger(pagearray, celloffsetarray->at(i), &pagenum);
+                uint rowidlength = GetVarIntLength(pagearray, celloffsetarray->at(i) + 4);
+                uint rowid = GetVarInt(pagearray, celloffsetarray->at(i) + 4, rowidlength);
+                FXString curidvalue = FXString::value(sqlfilelist->getCurrentItem()) + "," + FXString::value(curpage) + "," + FXString::value(tmprow);
+                FXString tagstr = "";
+                /* TAGGING
+                for(int j=0; j < taggedlist.no(); j++)
+                {
+                    if(taggeditems.at(j).contains(curidvalue))
+                        tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
+                }
+                */
+                AddContent(tmprow, "True", FXString::value(rowid), FXString::value(celloffsetarray->at(i)) + ", 4", "Page Number", FXString::value(pagenum), tagstr);
+                tmprow++;
+            }
+            else if((uint)pageheader.type == 0x0a) // index leaf
+            {
+                uint payloadlength = GetVarIntLength(pagearray, celloffsetarray->at(i));
+                uint payloadsize = GetVarInt(pagearray, celloffsetarray->at(i), payloadlength);
+                uint recordlengthlength = GetVarIntLength(pagearray, celloffsetarray->at(i) + payloadlength);
+                uint recordlength = GetVarInt(pagearray, celloffsetarray->at(i) + payloadlength, recordlengthlength);
+                uint64_t contentoffset = celloffsetarray->at(i) + payloadlength + recordlengthlength;
+                FXArray<int> serialtypes;
+                serialtypes.clear();
+                uint8_t* serialarray = substr(pagearray, celloffsetarray->at(i) + payloadlength + recordlengthlength, recordlength - recordlengthlength);
+                uint curserialtypelength = 0;
+                while(curserialtypelength < recordlength - recordlengthlength)
+                {
+                    uint curstlen = GetVarIntLength(serialarray, curserialtypelength);
+                    uint curst = GetVarInt(serialarray, curserialtypelength, curstlen);
+                    curserialtypelength += curstlen;
+                    serialtypes.append(curst);
+                }
+                if(i == 0)
+                {
+                    tablelist->setTableSize(serialtypes.no() * celloffsetarray->no(), 6);
+                    tablelist->setColumnText(0, "Tag");
+                    tablelist->setColumnText(1, "Is Live");
+                    tablelist->setColumnText(2, "Row ID");
+                    tablelist->setColumnText(3, "Offset, Length");
+                    tablelist->setColumnText(4, "Type");
+                    tablelist->setColumnText(5, "Value");
+                }
+                for(int j=0; j < serialtypes.no(); j++)
+                {
+                    FXString tmptype = "";
+                    FXString tmpval = "";
+                    FXString tmpofflen = "";
+                    GetSerialType(contentoffset, &tmptype, &tmpval, &tmpofflen, pagearray, serialtypes.at(j));
+                    FXString curidvalue = FXString::value(sqlfilelist->getCurrentItem()) + "," + FXString::value(curpage) + "," + FXString::value(tmprow);
+                    FXString tagstr = "";
+                    /* TAGGING
                     for(int j=0; j < taggeditems.count(); j++)
                     {
                         if(taggeditems.at(j).contains(curidvalue))
                             tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
                     }
-                    AddContent(curtmprow, "True", "", QString::number(celloffarray.at(i)) + ", 4", "Page Number", QString::number(pagenum), tagstr);
-                    curtmprow++;
-                    uint payloadlength = GetVarIntLength(pagearray, celloffarray.at(i) + 4);
-                    uint payloadsize = GetVarInt(pagearray, celloffarray.at(i) + 4, payloadlength);
-                    tagstr = "";
-                    curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
+                     */ 
+                    AddContent(tmprow, "True", "", tmpofflen, tmptype, tmpval, tagstr);
+                    tmprow++;
+                }
+            }
+            else if((uint)pageheader.type == 0x0d) // table leaf
+            {
+                uint payloadlength = GetVarIntLength(pagearray, celloffsetarray->at(i));
+                uint payloadsize = GetVarInt(pagearray, celloffsetarray->at(i), payloadlength);
+                uint rowidlength = GetVarIntLength(pagearray, celloffsetarray->at(i) + payloadlength);
+                uint rowid = GetVarInt(pagearray, celloffsetarray->at(i) + payloadlength, rowidlength);
+                tmprowid = FXString::value(rowid);
+                uint recordlengthlength = GetVarIntLength(pagearray, celloffsetarray->at(i) + payloadlength + rowidlength);
+                uint recordlength = GetVarInt(pagearray, celloffsetarray->at(i) + payloadlength + rowidlength, recordlengthlength);
+                uint64_t contentoffset = celloffsetarray->at(i) + payloadlength + rowidlength + recordlength;
+                FXArray<int> serialtypes;
+                serialtypes.clear();
+                uint8_t* serialarray = substr(pagearray, celloffsetarray->at(i) + payloadlength + rowidlength + recordlengthlength, recordlength - recordlengthlength);
+                uint curserialtypelength = 0;
+                while(curserialtypelength < recordlength - recordlengthlength)
+                {
+                    uint curstlen = GetVarIntLength(serialarray, curserialtypelength);
+                    uint curst = GetVarInt(serialarray, curserialtypelength, curstlen);
+                    curserialtypelength += curstlen;
+                    serialtypes.append(curst);
+                }
+                if(i == 0)
+                {
+                    tablelist->setTableSize(serialtypes.no() * celloffsetarray->no(), 6);
+                    tablelist->setColumnText(0, "Tag");
+                    tablelist->setColumnText(1, "Is Live");
+                    tablelist->setColumnText(2, "Row ID");
+                    tablelist->setColumnText(3, "Offset, Length");
+                    tablelist->setColumnText(4, "Type");
+                    tablelist->setColumnText(5, "Value");
+                }
+                for(int j=0; j < serialtypes.no(); j++)
+                {
+                    FXString tmptype = "";
+                    FXString tmpval = "";
+                    FXString tmpofflen = "";
+                    GetSerialType(contentoffset, &tmptype, &tmpval, &tmpofflen, pagearray, serialtypes.at(j));
+                    FXString curidvalue = FXString::value(sqlfilelist->getCurrentItem()) + "," + FXString::value(curpage) + "," + FXString::value(tmprow);
+                    FXString tagstr = "";
+                    /* TAGGING
                     for(int j=0; j < taggeditems.count(); j++)
                     {
                         if(taggeditems.at(j).contains(curidvalue))
                             tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
                     }
-                    AddContent(curtmprow, "True", "", QString::number(celloffarray.at(i) + 4) + ", " + QString::number(payloadsize), "Payload", QString::fromStdString(pagearray->mid(celloffarray.at(i) + 4 + payloadlength, payloadsize).toStdString()), tagstr);
-                    curtmprow++;
-                    /*
-                     * payload = 33, byte array 4, initial payload not in overflow - 27, 
-                    uint recordlengthlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength);
-                    uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength, recordlengthlength);
-                    quint64 contentoffset = celloffarray.at(i) + payloadlength + recordlength;
-                    QList<int> serialtypes;
-                    serialtypes.clear();
-                    QByteArray serialarray = pagearray->mid(celloffarray.at(i) + payloadlength + recordlengthlength, recordlength - recordlengthlength);
-                    //qDebug() << "serialarray:" << serialarray.toHex() << "serialarray.count:" << serialarray.count();
-                    uint curserialtypelength = 0;
-                    while(curserialtypelength < serialarray.count())
-                    {
-                        uint curstlen = GetVarIntLength(&serialarray, curserialtypelength);
-                        uint curst = GetVarInt(&serialarray, curserialtypelength, curstlen);
-                        curserialtypelength += curstlen;
-                        serialtypes.append(GetSerialType(curst));
-                    }
-                    if(i == 0)
-                    {
-                        uint tmprowcnt = serialtypes.count() * celloffarray.count();
-                        ui->tablewidget->setRowCount(tmprowcnt);
-                    }
-                    for(int j=0; j < serialtypes.count(); j++)
-                    {
-                        uint curst = serialtypes.at(j);
-                        QString tmpofflen = "";
-                        QString tmptype = "";
-                        QString tmpval = "";
-                        if(curst == 0) // col length is zero, so content length doesn't change
-                        {
-                            tmptype = "0 - NULL";
-                            tmpval = "NULL";
-                            //qDebug() << "NULL";
-                        }
-                        else if(curst == 1) // quint8 (1)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 1";
-                            tmptype = "1 - 8-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1)));
-                            //qDebug() << "1 byte" << qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1));
-                            contentoffset++;
-                        }
-                        else if(curst == 2) // quint16 (2)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 2";
-                            tmptype = "2 - 16-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2)));
-                            //qDebug() << "2 byte:" << qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2));
-                            contentoffset = contentoffset + 2;
-                        }
-                        else if(curst == 3)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 3";
-                            tmptype = "3 - 24-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3)));
-                            //qDebug() << "3 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3));
-                            contentoffset = contentoffset + 3;
-                        }
-                        else if(curst == 4)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 4";
-                            tmptype = "4 - 32-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4)));
-                            //qDebug() << "4 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4));
-                            contentoffset = contentoffset + 4;
-                        }
-                        else if(curst == 5)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 6";
-                            tmptype = "5 - 38-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6)));
-                            //qDebug() << "6 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6));
-                            contentoffset = contentoffset + 6;
-                        }
-                        else if(curst == 6)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 8";
-                            tmptype = "6 - 64-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8)));
-                            //qDebug() << "8 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8));
-                            contentoffset = contentoffset + 8;
-                        }
-                        else if(curst == 7)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 8";
-                            tmptype = "7 - 64-bit double";
-                            tmpval = QString::number(qFromBigEndian<double>(pagearray->mid(contentoffset, 8)));
-                            //qDebug() << "8 bytes:" << qFromBigEndian<double>(pagearray->mid(contentoffset, 8));
-                            contentoffset = contentoffset + 8;
-                        }
-                        else if(curst == 8) // col length is zero, so content length doesn't change
-                        {
-                            tmptype = "8 - Integer value 0";
-                            tmpval = "0";
-                            //qDebug() << "0";
-                        }
-                        else if(curst == 9) // col length is zero, so content length doesn't change)
-                        {
-                            tmptype = "9 - Integer value 1";
-                            tmpval = "1";
-                            //qDebug() << "1";
-                        }
-                        else if(curst >= 12) // BLOB OR TEXT
-                        {
-                            if(curst % 2 == 0) // EVEN AND BLOB
-                            {
-                                tmpofflen = QString::number(contentoffset) + ", " + QString::number((curst - 12) / 2);
-                                tmptype = ">=12 && even - BLOB";
-                                tmpval = pagearray->mid(contentoffset, (curst - 12) / 2).toHex();
-                                //qDebug() << "blob size:" << (curst - 12) / 2 << pagearray->mid(contentoffset, (curst-12) / 2).toHex();
-                                contentoffset = contentoffset + ((curst - 12) / 2);
-                            }
-                            else // ODD AND TEXT
-                            {
-                                tmpofflen = QString::number(contentoffset) + ", " + QString::number((curst - 13) / 2);
-                                tmptype = ">=13 & odd - TEXT";
-                                tmpval = QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
-                                //qDebug() << "Text Size:" << (curst - 13) / 2 << QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
-                                contentoffset = contentoffset + ((curst - 13) / 2);
-                            }
-                        }
-                        //qDebug() << "curtmprow:" << curtmprow;
-                        AddContent(curtmprow, "True", "", tmpofflen, tmptype, tmpval);
-                        curtmprow++;
-                    }
-                    */
-                    /*
-                }
-                else if(pageheader.type == 0x05) // table interior
-                {
-                    quint32 pagenum = qFromBigEndian<quint32>(pagearray->mid(celloffarray.at(i), 4));
-                    uint rowidlength = GetVarIntLength(pagearray, celloffarray.at(i) + 4);
-                    uint rowid = GetVarInt(pagearray, celloffarray.at(i) + 4, rowidlength);
-                    QString curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
-                    QString tagstr = "";
-                    for(int j=0; j < taggeditems.count(); j++)
-                    {
-                        if(taggeditems.at(j).contains(curidvalue))
-                            tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
-                    }
-                    AddContent(curtmprow, "True", QString::number(rowid), QString::number(celloffarray.at(i)) + ", 4", "Page Number", QString::number(pagenum), tagstr);
-                    curtmprow++;
-                    //qDebug() << "pagenum:" << pagenum;
-                }
-                else if(pageheader.type == 0x0a) // index leaf
-                {
-                    //qDebug() << "index leaf, need to parse similar to table leaf...";
-                    uint payloadlength = GetVarIntLength(pagearray, celloffarray.at(i));
-                    uint payloadsize = GetVarInt(pagearray, celloffarray.at(i), payloadlength);
-                    uint recordlengthlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength);
-                    uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength, recordlengthlength);
-                    quint64 contentoffset = celloffarray.at(i) + payloadlength + recordlength;
-                    QList<int> serialtypes;
-                    serialtypes.clear();
-                    QByteArray serialarray = pagearray->mid(celloffarray.at(i) + payloadlength + recordlengthlength, recordlength - recordlengthlength);
-                    uint curserialtypelength = 0;
-                    while(curserialtypelength < serialarray.count())
-                    {
-                        uint curstlen = GetVarIntLength(&serialarray, curserialtypelength);
-                        uint curst = GetVarInt(&serialarray, curserialtypelength, curstlen);
-                        curserialtypelength += curstlen;
-                        serialtypes.append(curst);
-                        //serialtypes.append(GetSerialType(curst));
-                    }
-                    if(i == 0)
-                    {
-                        uint tmprowcnt = serialtypes.count() * celloffarray.count();
-                        ui->tablewidget->setRowCount(tmprowcnt);
-                    }
-                    for(int j=0; j < serialtypes.count(); j++)
-                    {
-                        uint curst = serialtypes.at(j);
-                        QString tmpofflen = "";
-                        QString tmptype = "";
-                        QString tmpval = "";
-                        if(curst == 0) // col length is zero, so content length doesn't change
-                        {
-                            tmptype = "0 - NULL";
-                            tmpval = "NULL";
-                            //qDebug() << "NULL";
-                        }
-                        else if(curst == 1) // quint8 (1)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 1";
-                            tmptype = "1 - 8-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1)));
-                            //qDebug() << "1 byte" << qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1));
-                            contentoffset++;
-                        }
-                        else if(curst == 2) // quint16 (2)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 2";
-                            tmptype = "2 - 16-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2)));
-                            //qDebug() << "2 byte:" << qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2));
-                            contentoffset = contentoffset + 2;
-                        }
-                        else if(curst == 3)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 3";
-                            tmptype = "3 - 24-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3)));
-                            //qDebug() << "3 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3));
-                            contentoffset = contentoffset + 3;
-                        }
-                        else if(curst == 4)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 4";
-                            tmptype = "4 - 32-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4)));
-                            //qDebug() << "4 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4));
-                            contentoffset = contentoffset + 4;
-                        }
-                        else if(curst == 5)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 6";
-                            tmptype = "5 - 38-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6)));
-                            //qDebug() << "6 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6));
-                            contentoffset = contentoffset + 6;
-                        }
-                        else if(curst == 6)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 8";
-                            tmptype = "6 - 64-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8)));
-                            //qDebug() << "8 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8));
-                            contentoffset = contentoffset + 8;
-                        }
-                        else if(curst == 7)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 8";
-                            tmptype = "7 - 64-bit double";
-                            tmpval = QString::number(qFromBigEndian<double>(pagearray->mid(contentoffset, 8)));
-                            //qDebug() << "8 bytes:" << qFromBigEndian<double>(pagearray->mid(contentoffset, 8));
-                            contentoffset = contentoffset + 8;
-                        }
-                        else if(curst == 8) // col length is zero, so content length doesn't change
-                        {
-                            tmptype = "8 - Integer value 0";
-                            tmpval = "0";
-                            //qDebug() << "0";
-                        }
-                        else if(curst == 9) // col length is zero, so content length doesn't change)
-                        {
-                            tmptype = "9 - Integer value 1";
-                            tmpval = "1";
-                            //qDebug() << "1";
-                        }
-                        else if(curst >= 12) // BLOB OR TEXT
-                        {
-                            if(curst % 2 == 0) // EVEN AND BLOB
-                            {
-                                tmpofflen = QString::number(contentoffset) + ", " + QString::number((curst - 12) / 2);
-                                tmptype = ">=12 && even - BLOB";
-                                tmpval = pagearray->mid(contentoffset, (curst - 12) / 2).toHex();
-                                //qDebug() << "blob size:" << (curst - 12) / 2 << pagearray->mid(contentoffset, (curst-12) / 2).toHex();
-                                contentoffset = contentoffset + ((curst - 12) / 2);
-                            }
-                            else // ODD AND TEXT
-                            {
-                                tmpofflen = QString::number(contentoffset) + ", " + QString::number((curst - 13) / 2);
-                                tmptype = ">=13 & odd - TEXT";
-                                tmpval = QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
-                                //qDebug() << "Text Size:" << (curst - 13) / 2 << QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
-                                contentoffset = contentoffset + ((curst - 13) / 2);
-                            }
-                        }
-                        //qDebug() << "curtmprow:" << curtmprow;
-                        QString curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
-                        QString tagstr = "";
-                        for(int j=0; j < taggeditems.count(); j++)
-                        {
-                            if(taggeditems.at(j).contains(curidvalue))
-                                tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
-                        }
-                        AddContent(curtmprow, "True", "", tmpofflen, tmptype, tmpval, tagstr);
-                        curtmprow++;
-                    }
-                }
-                else if(pageheader.type == 0x0d) // table leaf
-                {
-                    uint payloadlength = GetVarIntLength(pagearray, celloffarray.at(i));
-                    uint payloadsize = GetVarInt(pagearray, celloffarray.at(i), payloadlength);
-                    //qDebug() << "payload length:" << payloadlength << "payload size:" << payloadsize;
-                    uint rowidlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength);
-                    uint rowid = GetVarInt(pagearray, celloffarray.at(i) + payloadlength, rowidlength);
-                    tmprowid = QString::number(rowid);
-                    //qDebug() << "rowid length:" << rowidlength << "row id:" << rowid;
-                    uint recordlengthlength = GetVarIntLength(pagearray, celloffarray.at(i) + payloadlength + rowidlength);
-                    uint recordlength = GetVarInt(pagearray, celloffarray.at(i) + payloadlength + rowidlength, recordlengthlength);
-                    //qDebug() << "record length length:" << recordlengthlength << "record length:" << recordlength;
-                    // so i need to get the number of bytes after recordlength byte... these are the serial types...
-                    quint64 contentoffset = celloffarray.at(i) + payloadlength + rowidlength + recordlength;
-                    QList<int> serialtypes;
-                    serialtypes.clear();
-                    QByteArray serialarray = pagearray->mid(celloffarray.at(i) + payloadlength + rowidlength + recordlengthlength, recordlength - recordlengthlength);
-                    //qDebug() << "Serial Array:" << serialarray.toHex();
-                    uint curserialtypelength = 0;
-                    while(curserialtypelength < serialarray.count())
-                    {
-                        uint curstlen = GetVarIntLength(&serialarray, curserialtypelength);
-                        uint curst = GetVarInt(&serialarray, curserialtypelength, curstlen);
-                        curserialtypelength += curstlen;
-                        serialtypes.append(curst);
-                        //serialtypes.append(GetSerialType(curst));
-                    }
-                    //qDebug() << "serialtypes:" << serialtypes;
-                    if(i == 0)
-                    {
-                        uint tmprowcnt = serialtypes.count() * celloffarray.count();
-                        //qDebug() << "tmprowcnt:" << tmprowcnt;
-                        ui->tablewidget->setRowCount(tmprowcnt);
-                    }
-                    for(int j=0; j < serialtypes.count(); j++)
-                    {
-                        uint curst = serialtypes.at(j);
-                        QString tmpofflen = "";
-                        QString tmptype = "";
-                        QString tmpval = "";
-                        // attempt to spit out content for serial type here... 
-                        //qDebug() << "current serial type:" << curst;
-                        if(curst == 0) // col length is zero, so content length doesn't change
-                        {
-                            tmptype = "0 - NULL";
-                            tmpval = "NULL";
-                            //qDebug() << "NULL";
-                        }
-                        else if(curst == 1) // quint8 (1)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 1";
-                            tmptype = "1 - 8-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1)));
-                            //qDebug() << "1 byte" << qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1));
-                            contentoffset++;
-                        }
-                        else if(curst == 2) // quint16 (2)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 2";
-                            tmptype = "2 - 16-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2)));
-                            //qDebug() << "2 byte:" << qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2));
-                            contentoffset = contentoffset + 2;
-                        }
-                        else if(curst == 3)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 3";
-                            tmptype = "3 - 24-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3)));
-                            //qDebug() << "3 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3));
-                            contentoffset = contentoffset + 3;
-                        }
-                        else if(curst == 4)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 4";
-                            tmptype = "4 - 32-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4)));
-                            //qDebug() << "4 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4));
-                            contentoffset = contentoffset + 4;
-                        }
-                        else if(curst == 5)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 6";
-                            tmptype = "5 - 38-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6)));
-                            //qDebug() << "6 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6));
-                            contentoffset = contentoffset + 6;
-                        }
-                        else if(curst == 6)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 8";
-                            tmptype = "6 - 64-bit int";
-                            tmpval = QString::number(qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8)));
-                            //qDebug() << "8 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8));
-                            contentoffset = contentoffset + 8;
-                        }
-                        else if(curst == 7)
-                        {
-                            tmpofflen = QString::number(contentoffset) + ", 8";
-                            tmptype = "7 - 64-bit double";
-                            tmpval = QString::number(qFromBigEndian<double>(pagearray->mid(contentoffset, 8)));
-                            //qDebug() << "8 bytes:" << qFromBigEndian<double>(pagearray->mid(contentoffset, 8));
-                            contentoffset = contentoffset + 8;
-                        }
-                        else if(curst == 8) // col length is zero, so content length doesn't change
-                        {
-                            tmptype = "8 - Integer value 0";
-                            tmpval = "0";
-                            //qDebug() << "0";
-                        }
-                        else if(curst == 9) // col length is zero, so content length doesn't change)
-                        {
-                            tmptype = "9 - Integer value 1";
-                            tmpval = "1";
-                            //qDebug() << "1";
-                        }
-                        else if(curst >= 12) // BLOB OR TEXT
-                        {
-                            if(curst % 2 == 0) // EVEN AND BLOB
-                            {
-                                tmpofflen = QString::number(contentoffset) + ", " + QString::number((curst - 12) / 2);
-                                tmptype = ">=12 && even - BLOB";
-                                tmpval = pagearray->mid(contentoffset, (curst - 12) / 2).toHex();
-                                //qDebug() << "blob size:" << (curst - 12) / 2 << pagearray->mid(contentoffset, (curst-12) / 2).toHex();
-                                contentoffset = contentoffset + ((curst - 12) / 2);
-                            }
-                            else // ODD AND TEXT
-                            {
-                                tmpofflen = QString::number(contentoffset) + ", " + QString::number((curst - 13) / 2);
-                                tmptype = ">=13 & odd - TEXT";
-                                tmpval = QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
-                                //qDebug() << "Text Size:" << (curst - 13) / 2 << QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
-                                contentoffset = contentoffset + ((curst - 13) / 2);
-                            }
-                        }
-                        //qDebug() << "curtmprow:" << curtmprow;
-                        QString curidvalue = QString::number(ui->treewidget->currentRow()) + "," + ui->treewidget->currentItem()->data(258).toString() + "," + QString::number(curtmprow);
-                        QString tagstr = "";
-                        for(int j=0; j < taggeditems.count(); j++)
-                        {
-                            if(taggeditems.at(j).contains(curidvalue))
-                                tagstr = taggeditems.at(j).split("|", Qt::SkipEmptyParts).first();
-                        }
-                        AddContent(curtmprow, "True", tmprowid, tmpofflen, tmptype, tmpval, tagstr);
-                        curtmprow++;
-                        //serialtypes.append(GetSerialType(curst));
-                        //qDebug() << "curstlen:" << curstlen << "curst:" << curst << "curserialtypelength:" << curserialtypelength;
-                    }
-                    //qDebug() << "serialtypes:" << serialtypes;
-                    // that new offset is correct for where to start with the content... so once i return serial types, i can pull the values i need...
-                    //qDebug() << "new offset for column content:" << celloffarray.at(i) + payloadlength + rowidlength + recordlengthlength + recordlength - recordlengthlength;
+                     */ 
+                    AddContent(tmprow, "True", tmprowid, tmpofflen, tmptype, tmpval, tagstr);
+                    tmprow++;
                 }
             }
             // UPDATE TAGS HERE....
-            ui->tablewidget->resizeColumnsToContents();
         }
-        else // root page of a table with no rows
-        {
-            qDebug() << "cell content area offset is equal to pagesize - reserved space bytes.";
-        }
+        tablelist->fitColumnsToContents(2);
+        AlignColumn(tablelist, 0, FXTableItem::LEFT);
+        AlignColumn(tablelist, 1, FXTableItem::LEFT);
+        AlignColumn(tablelist, 2, FXTableItem::LEFT);
+        AlignColumn(tablelist, 3, FXTableItem::LEFT);
+        AlignColumn(tablelist, 4, FXTableItem::LEFT);
+        AlignColumn(tablelist, 5, FXTableItem::LEFT);
     }
-    //qDebug() << "cell offset array count: " << celloffarray.count() << celloffarray;
-     */
+    else // root page of a table with no rows
+    {
+        //qDebug() << "cell content area offset is equal to pagesize - reserved space bytes.";
+    }
 }
 
 void WombatSqlite::AlignColumn(FXTable* curtable, int col, FXuint justify)
