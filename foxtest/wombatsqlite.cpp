@@ -92,6 +92,24 @@ void WombatSqlite::create()
     show(PLACEMENT_SCREEN);
 }
 
+long WombatSqlite::TableUpDown(FXObject*, FXSelector, void* ptr)
+{
+    int currow = tablelist->getCurrentRow();
+    switch(((FXEvent*)ptr)->code)
+    {
+        case KEY_Up:
+            tablelist->setCurrentItem(currow - 1, 0, true);
+	    tablelist->selectRow(currow - 1, true);
+            break;
+        case KEY_Down:
+            tablelist->setCurrentItem(currow + 1, 0, true);
+	    tablelist->selectRow(currow + 1, true);
+            break;
+    }
+
+    return 1;
+}
+
 long WombatSqlite::TableUp(FXObject*, FXSelector, void* ptr)
 {
     int currow = proptable->getCurrentRow();
@@ -1213,13 +1231,14 @@ uint WombatSqlite::GetVarInt(uint8_t* pagearray, uint64_t pageoffset, uint varin
         //return qFromBigEndian<quint8>(varbytes);
 }
 
-void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXString* tmpval, FXString* tmpofflen, uint8_t* pagearray, int serialtype)
+uint64_t WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXString* tmpval, FXString* tmpofflen, uint8_t* pagearray, int serialtype)
 {
     if(serialtype == 0) // col length is zero, so content length doesn't change
     {
         *tmptype = "0 - NULL";
         *tmpval = "NULL";
         //qDebug() << "NULL";
+        return contentoffset;
     }
     else if(serialtype == 1) // uint8_t (1)
     {
@@ -1227,7 +1246,8 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
         *tmptype = "1 - 8-bit int";
         *tmpval = FXString::value((uint)(pagearray[contentoffset]));
         //qDebug() << "1 byte" << qFromBigEndian<quint8>(pagearray->mid(contentoffset, 1));
-        contentoffset++;
+        return contentoffset + 1;
+        //contentoffset++;
     }
     else if(serialtype == 2) // uint16_t (2)
     {
@@ -1237,7 +1257,7 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
         ReadInteger(pagearray, contentoffset, &tmp16);
         *tmpval = FXString::value(tmp16);
         //qDebug() << "2 byte:" << qFromBigEndian<quint16>(pagearray->mid(contentoffset, 2));
-        contentoffset = contentoffset + 2;
+        return contentoffset + 2;
     }
     else if(serialtype == 3) // uint24_t (3)
     {
@@ -1246,7 +1266,7 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
         uint32_t tmp24 = __builtin_bswap32((uint32_t)pagearray[contentoffset] | (uint32_t)pagearray[contentoffset + 1] << 8 | (uint32_t)pagearray[contentoffset + 2] << 16);
         *tmpval = FXString::value(tmp24);
         //qDebug() << "3 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 3));
-        contentoffset = contentoffset + 3;
+        return contentoffset + 3;
     }
     else if(serialtype == 4) // uint32_t (4)
     {
@@ -1256,7 +1276,7 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
         ReadInteger(pagearray, contentoffset, &tmp32);
         *tmpval = FXString::value(tmp32);
         //qDebug() << "4 bytes:" << qFromBigEndian<quint32>(pagearray->mid(contentoffset, 4));
-        contentoffset = contentoffset + 4;
+        return contentoffset + 4;
     }
     else if(serialtype == 5) // uint48_t (6)
     {
@@ -1265,7 +1285,7 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
         uint64_t tmp48 = __builtin_bswap64((uint64_t)pagearray[contentoffset] | (uint64_t)pagearray[contentoffset + 1] << 8 | (uint64_t)pagearray[contentoffset + 2] << 16 | (uint64_t)pagearray[contentoffset + 3] << 24 | (uint64_t)pagearray[contentoffset + 4] << 32 | (uint64_t)pagearray[contentoffset + 5] << 40);
         *tmpval = FXString::value(tmp48);
         //qDebug() << "6 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 6));
-        contentoffset = contentoffset + 6;
+        return contentoffset + 6;
     }
     else if(serialtype == 6) // uint64_t (8)
     {
@@ -1275,7 +1295,7 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
         ReadInteger(pagearray, contentoffset, &tmp64);
         *tmpval = FXString::value(tmp64);
         //qDebug() << "8 bytes:" << qFromBigEndian<quint64>(pagearray->mid(contentoffset, 8));
-        contentoffset = contentoffset + 8;
+        return contentoffset + 8;
     }
     else if(serialtype == 7) // double (8)
     {
@@ -1286,18 +1306,20 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
         //double tmp64 = __builtin_bswap64((double)pagearray[contentoffset] | (double)pagearray[contentoffset + 1] << 8 | (double)pagearray[contentoffset + 2] << 16 | (double)pagearray[contentoffset + 3] << 24 | (double)pagearray[contentoffset + 4] << 32 | (double)pagearray[contentoffset + 5] << 40 | (double)pagearray[contentoffset + 6] << 48 | (double)pagearray[contentoffset + 7] << 56);
         *tmpval = FXString::value((double)tmp64);
         //qDebug() << "8 bytes:" << qFromBigEndian<double>(pagearray->mid(contentoffset, 8));
-        contentoffset = contentoffset + 8;
+        return contentoffset + 8;
     }
     else if(serialtype == 8) // col length is zero, so content length doesn't change
     {
         *tmptype = "8 - Integer value 0";
         *tmpval = "0";
+        return contentoffset;
         //qDebug() << "0";
     }
     else if(serialtype == 9) // col length is zero, so content length doesn't change)
     {
         *tmptype = "9 - Integer value 1";
         *tmpval = "1";
+        return contentoffset;
         //qDebug() << "1";
     }
     else if(serialtype >= 12) // BLOB OR TEXT
@@ -1314,7 +1336,7 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
             //*tmpval = FXString((char*)substr(pagearray, contentoffset, (serialtype - 12) / 2));
             //tmpval = pagearray->mid(contentoffset, (serialtype - 12) / 2).toHex();
             //qDebug() << "blob size:" << (serialtype - 12) / 2 << pagearray->mid(contentoffset, (curst-12) / 2).toHex();
-            contentoffset = contentoffset + ((serialtype - 12) / 2);
+            return contentoffset + ((serialtype - 12) / 2);
         }
         else // ODD AND TEXT
         {
@@ -1324,9 +1346,10 @@ void WombatSqlite::GetSerialType(uint64_t contentoffset, FXString* tmptype, FXSt
             //*tmpval = QString::fromStdString(pagearray->mid(contentoffset, (serialtype - 13) / 2).toStdString());
             //sqliteheader.header = FXString((char*)substr(pageheader, 0, 16));
             //qDebug() << "Text Size:" << (serialtype - 13) / 2 << QString::fromStdString(pagearray->mid(contentoffset, (curst - 13) / 2).toStdString());
-            contentoffset = contentoffset + ((serialtype - 13) / 2);
+            return contentoffset + ((serialtype - 13) / 2);
         }
     }
+    return contentoffset;
 }
 
 void WombatSqlite::ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* celloffsetarray)
@@ -1434,7 +1457,7 @@ void WombatSqlite::ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* cello
                 uint payloadsize = GetVarInt(pagearray, celloffsetarray->at(i), payloadlength);
                 uint recordlengthlength = GetVarIntLength(pagearray, celloffsetarray->at(i) + payloadlength);
                 uint recordlength = GetVarInt(pagearray, celloffsetarray->at(i) + payloadlength, recordlengthlength);
-                uint64_t contentoffset = celloffsetarray->at(i) + payloadlength + recordlengthlength;
+                uint64_t contentoffset = celloffsetarray->at(i) + payloadlength + recordlength;
                 FXArray<int> serialtypes;
                 serialtypes.clear();
                 uint8_t* serialarray = substr(pagearray, celloffsetarray->at(i) + payloadlength + recordlengthlength, recordlength - recordlengthlength);
@@ -1511,7 +1534,7 @@ void WombatSqlite::ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* cello
                     FXString tmptype = "";
                     FXString tmpval = "";
                     FXString tmpofflen = "";
-                    GetSerialType(contentoffset, &tmptype, &tmpval, &tmpofflen, pagearray, serialtypes.at(j));
+                    contentoffset = GetSerialType(contentoffset, &tmptype, &tmpval, &tmpofflen, pagearray, serialtypes.at(j));
                     FXString curidvalue = FXString::value(sqlfilelist->getCurrentItem()) + "," + FXString::value(curpage) + "," + FXString::value(tmprow);
                     FXString tagstr = "";
                     /* TAGGING
@@ -1527,7 +1550,8 @@ void WombatSqlite::ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* cello
             }
             // UPDATE TAGS HERE....
         }
-        tablelist->fitColumnsToContents(2);
+        tablelist->fitColumnsToContents(4);
+        tablelist->fitColumnsToContents(5);
         AlignColumn(tablelist, 0, FXTableItem::LEFT);
         AlignColumn(tablelist, 1, FXTableItem::LEFT);
         AlignColumn(tablelist, 2, FXTableItem::LEFT);
@@ -1582,6 +1606,13 @@ long WombatSqlite::PropertySelected(FXObject*, FXSelector, void*)
         LengthUpdate(vallist.at(1));
     }
      */ 
+}
+
+long WombatSqlite::ContentSelected(FXObject*, FXSelector, void*)
+{
+    tablelist->selectRow(tablelist->getCurrentRow());
+
+    return 1;
 }
 
     /*
