@@ -194,6 +194,7 @@ class WombatSqlite : public FXMainWindow
         void ParseFileHeader(uint8_t* pageheader);
         void PopulateFileHeader(void);
         void ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint64_t curpage);
+        void PopulatePageHeader(FXArray<uint16_t>* celloffsetarray);
         void ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* celloffsetarray);
         void PopulatePropertyTable(FXArray<uint16_t>* celloffsetarray);
         void AddProperty(int row, FXString offlen, FXString val, FXString desc);

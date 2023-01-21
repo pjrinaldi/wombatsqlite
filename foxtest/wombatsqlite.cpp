@@ -934,6 +934,7 @@ void WombatSqlite::AddProperty(int row, FXString offlen, FXString val, FXString 
 
 void WombatSqlite::PopulateFileHeader()
 {
+    /*
     if((uint)filetype == 0x01)
         proptable->setTableSize(8, 3);
     else if((uint)filetype == 0x02)
@@ -943,6 +944,7 @@ void WombatSqlite::PopulateFileHeader()
     proptable->setColumnText(0, "Offset, Length");
     proptable->setColumnText(1, "Value");
     proptable->setColumnText(2, "Description");
+    */
     if((uint)filetype == 0x01) // WAL
     {
         std::stringstream ss;
@@ -988,8 +990,8 @@ void WombatSqlite::PopulateFileHeader()
         AddProperty(16, "92, 4", FXString::value(sqliteheader.versionvalidfornum), "SQLite Version Valid for Number");
         AddProperty(17, "96, 4", FXString::value(sqliteheader.version), "SQLite Version");
     }
-    proptable->fitColumnsToContents(2);
-    AlignColumn(proptable, 2, FXTableItem::LEFT);
+    //proptable->fitColumnsToContents(2);
+    //AlignColumn(proptable, 2, FXTableItem::LEFT);
 }
 
 void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint64_t curpage)
@@ -1065,14 +1067,75 @@ void WombatSqlite::ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint6
     }
     PopulatePropertyTable(&celloffsetarray);
     ParseRowContents(pagearray, &celloffsetarray);
-}    
+}
+
+void WombatSqlite::PopulatePageHeader(FXArray<uint16_t>* celloffsetarray)
+{
+    uint64_t curpos = 0;
+    uint64_t cellarrayoffset = 0;
+    int rowcnt = 0;
+    //int rowcnt = proptable->getNumRows();
+    if((uint)filetype == 0x01) // WAL
+    {
+        if(curpage == 1)
+        {
+            rowcnt = 8;
+            curpos = 32;
+        }
+    }
+    else if((uint)filetype == 0x02) // JOURNAL
+    {
+        if(curpage == 1)
+        {
+            rowcnt = 6;
+            curpos = 28;
+        }
+    }
+    else if((uint)filetype == 0x03) // DB
+    {
+        if(curpage == 1)
+        {
+            rowcnt = 18;
+            curpos = 100;
+        }
+        AddProperty(rowcnt, FXString::value(curpos) + ", 1", "0x" + FXString::value(pageheader.type, 16), "Page Type: 0x02 | 0x05 - Index | Table Interior, 0x0d | 0x0d - Index | Table Leaf, any other value is error.");
+        AddProperty(rowcnt + 1, FXString::value(curpos + 1) + ", 2", FXString::value(pageheader.firstfreeblock), "Start of the first free block on the page or zero for no free blocks");
+        AddProperty(rowcnt + 2, FXString::value(curpos + 3) + ", 2", FXString::value(pageheader.cellcount), "Number of cells on the page");
+        AddProperty(rowcnt + 3, FXString::value(curpos + 5) + ", 2", FXString::value(pageheader.cellcontentstart), "Start of the cell content area, zero represents 65536");
+        AddProperty(rowcnt + 4, FXString::value(curpos + 7) + ", 1", FXString::value(pageheader.fragmentedfreebytescount), "Number of fragmented free bytes within cell content area");
+        cellarrayoffset = curpos + 8;
+        rowcnt = rowcnt + 4;
+        if((uint)pageheader.type == 0x02 || (uint)pageheader.type == 0x05)
+        {
+            cellarrayoffset = curpos + 12;
+            AddProperty(rowcnt + 5, FXString::value(curpos + 8) + ", 4", FXString::value(pageheader.rightmostpagenumber), "Largest page number, right most pointer");
+            rowcnt = rowcnt + 5;
+        }
+        for(int i=0; i < pageheader.cellcount; i++)
+        {
+            AddProperty(rowcnt + i, FXString::value(cellarrayoffset + 2*i) + ", 2", FXString::value(celloffsetarray->at(i)), "Cell Array Offset " + FXString::value(i+1));
+        }
+    }
+}
 
 void WombatSqlite::PopulatePropertyTable(FXArray<uint16_t>* celloffsetarray)
 {
+    /*
     std::cout << "prop table row cnt: " << proptablerowcnt << std::endl;
     std::cout << "cur page: " << curpage << std::endl;
     std::cout << "filetype: " << std::hex << "0x" << (uint)filetype << std::endl;
-    // need proptablerowcnt and curpage, filetype, pageheader, fileheader, etc..
+    */
+    proptable->setTableSize(proptablerowcnt, 3);
+    proptable->setColumnText(0, "Offset, Length");
+    proptable->setColumnText(1, "Value");
+    proptable->setColumnText(2, "Description");
+    if(curpage == 1)
+        PopulateFileHeader();
+    PopulatePageHeader(celloffsetarray);
+    proptable->fitColumnsToContents(2);
+    AlignColumn(proptable, 0, FXTableItem::LEFT);
+    AlignColumn(proptable, 1, FXTableItem::LEFT);
+    AlignColumn(proptable, 2, FXTableItem::LEFT);
 }
 
 void WombatSqlite::ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* celloffsetarray)
