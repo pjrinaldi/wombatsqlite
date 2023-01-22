@@ -94,16 +94,16 @@ class WombatSqlite : public FXMainWindow
     private:
         FXVerticalFrame* mainframe;
         FXHorizontalFrame* topframe;
+        FXHorizontalFrame* editorframe;
         FXSplitter* hsplitter;
         FXSplitter* vsplitter;
         FXSplitter* vsplitter2;
-        FXHorizontalFrame* editorframe;
         FXList* sqlfilelist;
         FXToolBar* toolbar;
         FXText* offsettext;
         FXText* hextext;
         FXText* asciitext;
-        //FXScrollBar* textscrollbar;
+        FXScrollBar* textscrollbar;
         FXLabel* pagelabel;
         FXSpinner* pagespinner;
         FXLabel* ofpagelabel;
@@ -188,6 +188,7 @@ class WombatSqlite : public FXMainWindow
         long ContentSelected(FXObject*, FXSelector, void*);
         long TableUpDown(FXObject*, FXSelector, void*);
         long PageChanged(FXObject*, FXSelector, void*);
+        long ScrollChanged(FXObject*, FXSelector, void*);
 	//void PopulateChildKeys(libregf_key_t* curkey, FXTreeItem* curitem, libregf_error_t* regerr);
 	void GetRootString(FXTreeItem* curitem, FXString* rootstring);
 	FXString ConvertWindowsTimeToUnixTimeUTC(uint64_t input);
@@ -234,6 +235,7 @@ FXDEFMAP(WombatSqlite) WombatSqliteMap[]={
     FXMAPFUNC(SEL_KEYPRESS, WombatSqlite::ID_TABLESELECT, WombatSqlite::TableUpDown),
     FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_TABLESELECT, WombatSqlite::ContentSelected),
     FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PAGESPIN, WombatSqlite::PageChanged),
+    FXMAPFUNC(SEL_CHANGED, WombatSqlite::ID_SCROLLBAR, WombatSqlite::ScrollChanged),
 };
 
 #endif // WOMBATSQLITE_H
