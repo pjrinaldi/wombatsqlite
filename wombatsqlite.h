@@ -1,23 +1,22 @@
 #ifndef WOMBATSQLITE_H
 #define WOMBATSQLITE_H
 
-// Copyright 2022-2023 Pasquale J. Rinaldi, Jr.
-// Distributed under the terms of the GNU General Public License version 2
-
-#include <QDebug>
-#include <QFileDialog>
-#include <QLabel>
-#include <QtEndian>
-#include <QDateTime>
-#include <QTimeZone>
-#include <QDirIterator>
-#include "ui_wombatsqlite.h"
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <stdio.h>
+#include <unistd.h>
+#include <vector>
+#include <string.h>
+#include <filesystem>
+#include <byteswap.h>
+#include <time.h>
+#include "/usr/local/include/fox-1.7/fx.h"
+#include "icons.h"
+#include "managetags.h"
 #include "aboutbox.h"
-#include "tagmanager.h"
-#include "htmlviewer.h"
-#include "cssstrings.h"
-
-#include <bitset>
+#include "viewer.h"
+#include "common.h"
 
 #define TICKS_PER_SECOND 10000000
 #define EPOCH_DIFFERENCE 11644473600LL
@@ -25,159 +24,219 @@
 
 struct WalHeader
 {
-    quint32 header; // = qFromBigEndian<quint32>(pageheader->mid(0, 4));
-    quint32 fileversion; // = qFromBigEndian<quint32>(pageheader->mid(4, 4));
-    quint32 pagesize; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
-    quint32 checkptseqnum; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
-    quint32 salt1; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
-    quint32 salt2; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
-    quint32 checksum1; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
-    quint32 checksum2; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
+    uint32_t header; // = qFromBigEndian<uint32_t>(pageheader->mid(0, 4));
+    uint32_t fileversion; // = qFromBigEndian<uint32_t>(pageheader->mid(4, 4));
+    uint32_t pagesize; // = qFromBigEndian<uint32_t>(pageheader->mid(8, 4));
+    uint32_t checkptseqnum; // = qFromBigEndian<uint32_t>(pageheader->mid(12, 4));
+    uint32_t salt1; // = qFromBigEndian<uint32_t>(pageheader->mid(16, 4));
+    uint32_t salt2; // = qFromBigEndian<uint32_t>(pageheader->mid(20, 4));
+    uint32_t checksum1; // = qFromBigEndian<uint32_t>(pageheader->mid(24, 4));
+    uint32_t checksum2; // = qFromBigEndian<uint32_t>(pageheader->mid(28, 4));
 };
 
 struct JournalHeader
 {
-    quint64 header; //= qFromBigEndian<quint64>(pageheader->mid(0, 8));
-    quint32 pagecnt; // = qFromBigEndian<quint32>(pageheader->mid(8, 4));
-    quint32 randomnonce; // = qFromBigEndian<quint32>(pageheader->mid(12, 4));
-    quint32 initsize; // = qFromBigEndian<quint32>(pageheader->mid(16, 4));
-    quint32 sectorsize; // = qFromBigEndian<quint32>(pageheader->mid(20, 4));
-    quint32 pagesize; // = qFromBigEndian<quint32>(pageheader->mid(24, 4));
+    uint64_t header; //= qFromBigEndian<uint64_t>(pageheader->mid(0, 8));
+    uint32_t pagecnt; // = qFromBigEndian<uint32_t>(pageheader->mid(8, 4));
+    uint32_t randomnonce; // = qFromBigEndian<uint32_t>(pageheader->mid(12, 4));
+    uint32_t initsize; // = qFromBigEndian<uint32_t>(pageheader->mid(16, 4));
+    uint32_t sectorsize; // = qFromBigEndian<uint32_t>(pageheader->mid(20, 4));
+    uint32_t pagesize; // = qFromBigEndian<uint32_t>(pageheader->mid(24, 4));
 };
 
 struct SqliteHeader
 {
-    QString header; // = QString::fromStdString(pageheader->mid(0, 16).toStdString());
-    quint16 pagesize; // = qFromBigEndian<quint16>(pageheader->mid(16, 2));
-    quint8 writeversion; // = qFromBigEndian<quint8>(pageheader->mid(18, 1));
-    quint8 readversion; // = qFromBigEndian<quint8>(pageheader->mid(19, 1));
-    quint8 unusedpagespace; // = qFromBigEndian<quint8>(pageheader->mid(20, 1));
-    quint32 pagecount; // = qFromBigEndian<quint32>(pageheader->mid(28, 4));
-    quint32 firstfreepagenum; // = qFromBigEndian<quint32>(pageheader->mid(32, 4));
-    quint32 freepagescount; // 36, 4
-    quint32 schemacookie; // 40, 4
-    quint32 schemaformat; // 44, 4 - 1,2,3,4
-    quint32 pagecachesize; // 48, 4
-    quint32 largestrootbtreepagenumber; // 52, 4 - or zero
-    quint32 textencoding; // 56, 4 - 1 utf-8, 2 utf-16le, 3 utf-16be
-    quint32 userversion; // 60, 4
-    quint32 incrementalvacuummodebool; // 64, 4 - 0 = false, otherwise true
-    quint32 appid; // 68, 4
+    FXString header; // = FXString::fromStdString(pageheader->mid(0, 16).toStdString());
+    uint16_t pagesize; // = qFromBigEndian<uint16_t>(pageheader->mid(16, 2));
+    uint8_t writeversion; // = qFromBigEndian<uint8_t>(pageheader->mid(18, 1));
+    uint8_t readversion; // = qFromBigEndian<uint8_t>(pageheader->mid(19, 1));
+    uint8_t unusedpagespace; // = qFromBigEndian<uint8_t>(pageheader->mid(20, 1));
+    uint32_t pagecount; // = qFromBigEndian<uint32_t>(pageheader->mid(28, 4));
+    uint32_t firstfreepagenum; // = qFromBigEndian<uint32_t>(pageheader->mid(32, 4));
+    uint32_t freepagescount; // 36, 4
+    uint32_t schemacookie; // 40, 4
+    uint32_t schemaformat; // 44, 4 - 1,2,3,4
+    uint32_t pagecachesize; // 48, 4
+    uint32_t largestrootbtreepagenumber; // 52, 4 - or zero
+    uint32_t textencoding; // 56, 4 - 1 utf-8, 2 utf-16le, 3 utf-16be
+    uint32_t userversion; // 60, 4
+    uint32_t incrementalvacuummodebool; // 64, 4 - 0 = false, otherwise true
+    uint32_t appid; // 68, 4
     char reserved[20]; // 72, 20
-    quint32 versionvalidfornum; // 92, 4
-    quint32 version; // 96, 4
+    uint32_t versionvalidfornum; // 92, 4
+    uint32_t version; // 96, 4
 };
 
 struct PageHeader
 {
-    quint8 type; // page type 0x02 - index interior (12) | 0x05 - table interior (12) | 0x0a - index leaf (8) | 0x0d - table leaf (8) [0,1]
-    quint16 firstfreeblock; // start of first free block on hte page or zero for no free blocks [1, 2]
-    quint16 cellcount; // number of cells on the page [3, 2]
-    quint16 cellcontentstart; // start of cell content area, zero represents 65536 [5, 2]
-    quint8 fragmentedfreebytescount; // number of fragmented free bytes within cell content area [7, 1]
-    quint32 rightmostpagenumber; // largest page number, right most pointer, interior page only [8, 4]
+    uint8_t type; // page type 0x02 - index interior (12) | 0x05 - table interior (12) | 0x0a - index leaf (8) | 0x0d - table leaf (8) [0,1]
+    uint16_t firstfreeblock; // start of first free block on hte page or zero for no free blocks [1, 2]
+    uint16_t cellcount; // number of cells on the page [3, 2]
+    uint16_t cellcontentstart; // start of cell content area, zero represents 65536 [5, 2]
+    uint8_t fragmentedfreebytescount; // number of fragmented free bytes within cell content area [7, 1]
+    uint32_t rightmostpagenumber; // largest page number, right most pointer, interior page only [8, 4]
 };
 
 struct FrameHeader
 {
-    quint32 pagenumber; // pagenumber
-    quint32 pagecount; // size of db file in pages for commits or zero
-    quint32 salt1; // salt-1 from the wal header
-    quint32 salt2; // salt-2 from the wal header
-    quint32 checksum1; // checksum-1 cumulative checksum up through and including this page
-    quint32 checksum2; // checksum-2 second half of cumulative checksum
+    uint32_t pagenumber; // pagenumber
+    uint32_t pagecount; // size of db file in pages for commits or zero
+    uint32_t salt1; // salt-1 from the wal header
+    uint32_t salt2; // salt-2 from the wal header
+    uint32_t checksum1; // checksum-1 cumulative checksum up through and including this page
+    uint32_t checksum2; // checksum-2 second half of cumulative checksum
 };
 
-namespace Ui
+class WombatSqlite : public FXMainWindow
 {
-    class WombatSqlite;
-}
+    FXDECLARE(WombatSqlite)
 
-class WombatSqlite : public QMainWindow
-{
-    Q_OBJECT
+    private:
+        FXVerticalFrame* mainframe;
+        FXHorizontalFrame* topframe;
+        FXHorizontalFrame* editorframe;
+        FXSplitter* hsplitter;
+        FXSplitter* vsplitter;
+        FXSplitter* vsplitter2;
+        FXList* sqlfilelist;
+        FXToolBar* toolbar;
+        FXText* offsettext;
+        FXText* hextext;
+        FXText* asciitext;
+        FXScrollBar* textscrollbar;
+        FXLabel* pagelabel;
+        FXSpinner* pagespinner;
+        FXLabel* ofpagelabel;
+        FXTable* proptable;
+        FXTable* tablelist;
+	FXIcon* openicon;
+        FXButton* openbutton;
+	FXIcon* managetagsicon;
+	FXButton* managetagsbutton;
+	FXIcon* previewicon;
+	FXButton* previewbutton;
+	FXIcon* publishicon;
+	FXButton* publishbutton;
+	FXIcon* abouticon;
+	FXButton* aboutbutton;
+        FXStatusBar* statusbar;
+        FXFont* plainfont;
 
-public:
-    explicit WombatSqlite(QWidget* parent = 0);
-    ~WombatSqlite();
-    void LoadSqliteFile(void);
+        FXString prevsqlitepath;
+        FXString sqlitefilepath;
+        FXString curfilepath;
+        FXArray<FXString> sqlitefiles;
+        std::vector<std::string> tags;
+        FXArray<FXString> taggedlist;
+        std::ifstream filebuffer;
+        FXArray<FXString> fileuserdata;
+        FXString curfileuserdata;
+        Viewer* viewer;
+        uint8_t filetype = 0;
+        uint64_t filesize = 0;
+        uint64_t pagecount = 0;
+        uint32_t pagesize = 0;
+        uint64_t curpage = 0;
+        int proptablerowcnt = 0;
+        JournalHeader journalheader;
+        WalHeader walheader;
+        SqliteHeader sqliteheader;
+        PageHeader pageheader;
+        FrameHeader frameheader;
 
-private slots:
-    void OpenDB(void);
-    void ManageTags(void);
-    void PreviewReport(void);
-    void PublishReport(void);
-    void ShowAbout(void);
-    void FileSelected(QListWidgetItem* curitem);
-    void PageChanged(int curpage);
-    void SelectText(void);
-    void ScrollHex(int linecount);
-    void SelectionChanged(void);
-    void ContentSelect(void);
+    protected:
+        WombatSqlite() {}
 
-    void TagMenu(const QPoint &point);
-    void SetTag(void);
-    void CreateNewTag(void);
-    void RemoveTag(void);
-    void UpdateTagsMenu(void);
-    void UpdatePreviewLinks(void);
-    void StatusUpdate(QString tmptext)
-    {
-        statuslabel->setText(tmptext);
-    };
-    void OffsetUpdate(QString tmptext)
-    {
-        hexlabel->setText("Hex Offset: 0x" + tmptext);
-    };
-    void LengthUpdate(QString tmptext)
-    {
-        lengthlabel->setText("Selection Length: " + tmptext);
-    };
+    public:
+        enum
+        {
+            ID_TREELIST = 1,
+            ID_OPEN = 100,
+            ID_TREESELECT = 101,
+	    ID_MANAGETAGS = 102,
+	    ID_PREVIEW = 103,
+	    ID_PUBLISH = 104,
+	    ID_ABOUT = 105,
+	    ID_TABLESELECT = 106,
+            ID_TAGMENU = 107,
+            ID_NEWTAG = 108,
+            ID_SETTAG = 109,
+            ID_REMTAG = 110,
+            ID_PAGESPIN = 111,
+            ID_SQLLIST = 112,
+            ID_PROPTABLE = 113,
+            ID_OFFTEXT = 114,
+            ID_HEXTEXT = 115,
+            ID_ASCTEXT = 116,
+            ID_SCROLLBAR = 117,
+            ID_LAST
+        };
+        WombatSqlite(FXApp* a);
+        long OpenSqliteFile(FXObject*, FXSelector, void*);
+        long OpenTagManager(FXObject*, FXSelector, void*);
+	long OpenAboutBox(FXObject*, FXSelector, void*);
+        long KeySelected(FXObject*, FXSelector, void*);
+	long ValueSelected(FXObject*, FXSelector, void*);
+        long TagMenu(FXObject*, FXSelector, void*);
+        long SetTag(FXObject* sender, FXSelector, void*);
+        long CreateNewTag(FXObject*, FXSelector, void*);
+        long RemoveTag(FXObject*, FXSelector, void*);
+        long PreviewReport(FXObject*, FXSelector, void*);
+        long PublishReport(FXObject*, FXSelector, void*);
+        long FileSelected(FXObject*, FXSelector, void*);
+        long PropertySelected(FXObject*, FXSelector, void*);
+        long TableUp(FXObject*, FXSelector, void*);
+        long ContentSelected(FXObject*, FXSelector, void*);
+        long TableUpDown(FXObject*, FXSelector, void*);
+        long PageChanged(FXObject*, FXSelector, void*);
+        long ScrollChanged(FXObject*, FXSelector, void*);
+	//void PopulateChildKeys(libregf_key_t* curkey, FXTreeItem* curitem, libregf_error_t* regerr);
+	void GetRootString(FXTreeItem* curitem, FXString* rootstring);
+	FXString ConvertWindowsTimeToUnixTimeUTC(uint64_t input);
+        FXString ConvertUnixTimeToString(uint32_t input);
+        FXString DecryptRot13(FXString encstr);
+        FXchar Rot13Char(FXchar curchar);
+        uint GetVarIntLength(uint8_t* pagearray, uint64_t pageoffset);
+        uint GetVarInt(uint8_t* pagearray, uint64_t pageoffset, uint varintlength);
+        uint64_t GetSerialType(uint64_t contentoffset, FXString* tmptype, FXString* tmpval, FXString* tmpofflen, uint8_t* pagearray, int serialtype);
+        void LoadPage(void);
+        void PopulatePageContent(uint8_t* pagearray);
+        void ParseFileHeader(uint8_t* pageheader);
+        void PopulateFileHeader(void);
+        void ParsePageHeader(uint8_t* pagearray, uint8_t fileheader, uint64_t curpage);
+        void PopulatePageHeader(FXArray<uint16_t>* celloffsetarray);
+        void ParseRowContents(uint8_t* pagearray, FXArray<uint16_t>* celloffsetarray);
+        void PopulatePropertyTable(FXArray<uint16_t>* celloffsetarray);
+        void AddProperty(int row, FXString offlen, FXString val, FXString desc);
+        void AddContent(int row, FXString islive, FXString rowid, FXString offlen, FXString type, FXString val, FXString tag);
+        void AlignColumn(FXTable* curtable, int row, FXuint justify);
+	void StatusUpdate(FXString tmptext)
+	{
+	    statusbar->getStatusLine()->setNormalText(tmptext);
+	};
+        virtual void create();
 
-protected:
-    //void closeEvent(QCloseEvent* event);
-    //void mouseDoubleClickEvent(QMouseEvent* event);
+};
 
-private:
-    Ui::WombatSqlite* ui;
-    QLabel* statuslabel;
-    QLabel* hexlabel;
-    QLabel* lengthlabel;
-    QString dbpath;
-    QString olddbpath;
-    QString curfilepath = "";
-    QFile dbfile;
-    quint8 filetype = 0;
-    quint64 pagecount = 0;
-    quint32 pagesize = 0;
-    quint64 curpage = 0;
-    void AddProperty(int row, QString offlen, QString val, QString desc);
-    void AddContent(int row, QString islive, QString rowid, QString offlen, QString type, QString val, QString tag);
-    void LoadPage(void);
-    void ParseHeader(QByteArray* pageheader);
-    void PopulateHeader(void);
-    void ParsePageHeader(QByteArray* pagearray, quint8 filetype, quint64 curpage);
-    uint GetVarIntLength(QByteArray* pagearray, quint64 pageoffset);
-    uint GetVarInt(QByteArray* pagearray, quint64 pageoffset, uint varintlength);
-    uint GetSerialType(uint serialtype);
-    QMenu* tagmenu;
-    QAction* newtagaction;
-    QAction* remtagaction;
-    QString htmlentry;
-    QString htmlvalue;
-    QString reportstring;
-    QString prehtml;
-    QString psthtml;
-    QByteArray reporttimezone;
-    QStringList tags;
-    QStringList taggeditems;
-    QStringList hives;
-    QStringList dbfiles;
-    JournalHeader journalheader;
-    WalHeader walheader;
-    SqliteHeader sqliteheader;
-    PageHeader pageheader;
-    FrameHeader frameheader;
+FXDEFMAP(WombatSqlite) WombatSqliteMap[]={
+    //FXMAPFUNC(SEL_CLICKED, WombatSqlite::ID_TREESELECT, WombatSqlite::KeySelected),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_OPEN, WombatSqlite::OpenSqliteFile),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_MANAGETAGS, WombatSqlite::OpenTagManager),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_ABOUT, WombatSqlite::OpenAboutBox),
+    //FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_TABLESELECT, WombatSqlite::ValueSelected),
+    FXMAPFUNC(SEL_RIGHTBUTTONRELEASE, WombatSqlite::ID_TABLESELECT, WombatSqlite::TagMenu),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_NEWTAG, WombatSqlite::CreateNewTag),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_SETTAG, WombatSqlite::SetTag),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_REMTAG, WombatSqlite::RemoveTag),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PREVIEW, WombatSqlite::PreviewReport),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PUBLISH, WombatSqlite::PublishReport),
+    FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_SQLLIST, WombatSqlite::FileSelected),
+    FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_PROPTABLE, WombatSqlite::PropertySelected),
+    FXMAPFUNC(SEL_KEYPRESS, WombatSqlite::ID_PROPTABLE, WombatSqlite::TableUp),
+    FXMAPFUNC(SEL_KEYPRESS, WombatSqlite::ID_TABLESELECT, WombatSqlite::TableUpDown),
+    FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_TABLESELECT, WombatSqlite::ContentSelected),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PAGESPIN, WombatSqlite::PageChanged),
+    FXMAPFUNC(SEL_CHANGED, WombatSqlite::ID_SCROLLBAR, WombatSqlite::ScrollChanged),
 };
 
 #endif // WOMBATSQLITE_H
