@@ -180,6 +180,8 @@ long WombatSqlite::ScrollChanged(FXObject*, FXSelector, void*)
     //asciitext->setPosition(textscrollbar->getPosition(), 0);
     //asciitext->update();
     //asciitext->verticalScrollBar()->update();
+    //asciitext->setPosition(asciitext->nextRow(textscrollbar->getPosition()), 0);
+    //asciitext->update();
 
 
     return 1;
