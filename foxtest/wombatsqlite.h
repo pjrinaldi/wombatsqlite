@@ -187,6 +187,7 @@ class WombatSqlite : public FXMainWindow
         long TableUp(FXObject*, FXSelector, void*);
         long ContentSelected(FXObject*, FXSelector, void*);
         long TableUpDown(FXObject*, FXSelector, void*);
+        long PageChanged(FXObject*, FXSelector, void*);
 	//void PopulateChildKeys(libregf_key_t* curkey, FXTreeItem* curitem, libregf_error_t* regerr);
 	void GetRootString(FXTreeItem* curitem, FXString* rootstring);
 	FXString ConvertWindowsTimeToUnixTimeUTC(uint64_t input);
@@ -232,6 +233,7 @@ FXDEFMAP(WombatSqlite) WombatSqliteMap[]={
     FXMAPFUNC(SEL_KEYPRESS, WombatSqlite::ID_PROPTABLE, WombatSqlite::TableUp),
     FXMAPFUNC(SEL_KEYPRESS, WombatSqlite::ID_TABLESELECT, WombatSqlite::TableUpDown),
     FXMAPFUNC(SEL_SELECTED, WombatSqlite::ID_TABLESELECT, WombatSqlite::ContentSelected),
+    FXMAPFUNC(SEL_COMMAND, WombatSqlite::ID_PAGESPIN, WombatSqlite::PageChanged),
 };
 
 #endif // WOMBATSQLITE_H

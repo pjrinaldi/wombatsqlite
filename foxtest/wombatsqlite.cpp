@@ -128,6 +128,52 @@ long WombatSqlite::TableUp(FXObject*, FXSelector, void* ptr)
     return 1;
 }
 
+long WombatSqlite::PageChanged(FXObject*, FXSelector, void*)
+{
+    int cpage = pagespinner->getValue();
+    int curitem = sqlfilelist->getCurrentItem();
+    if(curitem > -1)
+    {
+        FXString tmpstr = sqlfilelist->getItemText(sqlfilelist->getCurrentItem());
+        int found = tmpstr.find(" (");
+        int lfound = tmpstr.find("[");
+        int rfound = tmpstr.find("]");
+        curfilepath = tmpstr.mid(lfound+1, rfound - lfound - 1) + tmpstr.mid(0, found);
+        filebuffer.open(curfilepath.text(), std::ios::in|std::ios::binary);
+        filebuffer.seekg(0, filebuffer.beg);
+        proptable->setCurrentItem(-1, -1);
+        //proptable->selectRow(-1);
+        curfileuserdata = fileuserdata.at(curitem);
+        lfound = curfileuserdata.find_first_of("|");
+        rfound = curfileuserdata.find_last_of("|");
+        FXString ftype = curfileuserdata.mid(0, lfound);
+        FXString psize = curfileuserdata.mid(lfound+1, rfound-1);
+        fileuserdata[curitem] = ftype + "|" + psize + "|" + FXString::value(cpage);
+        curpage = cpage;
+        LoadPage();
+    }
+    /*
+    if(ui->treewidget->currentItem() != NULL)
+    {
+        ui->propwidget->setCurrentItem(NULL);
+        ui->treewidget->currentItem()->setData(258, cpage);
+        ui->tablewidget->clearContents();
+        curpage = cpage;
+        LoadPage();
+    }
+
+    fileuserdata.append(FXString::value(filetype) + "|" + FXString::value(pagesize) + "|" + FXString::value(1));
+    curfileuserdata = fileuserdata.at(sqlfilelist->getCurrentItem());
+    int lfound = curfileuserdata.find_first_of("|");
+    int rfound = curfileuserdata.find_last_of("|");
+    filetype = (uint8_t)curfileuserdata.mid(0, lfound).toUInt();
+    pagesize = curfileuserdata.mid(lfound+1, rfound-1).toULong();
+    curpage = curfileuserdata.mid(rfound+1, curfileuserdata.length() - rfound - 1).toULong();
+     */ 
+
+    return 1;
+}
+
 long WombatSqlite::TagMenu(FXObject*, FXSelector, void* ptr)
 {
     /*
@@ -787,6 +833,11 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
             int found = sqlitefilepath.find_last_of("/");
             FXString itemstring = sqlitefilepath.right(sqlitefilepath.length() - found - 1) + " (" + FXString::value(pagecount) + ") [" + sqlitefilepath.left(found+1) + "]";
             FXListItem* rootitem = new FXListItem(itemstring);
+            /*
+            rootitem->setData(256, QVariant(filetype)); // file type
+            rootitem->setData(257, QVariant(pagesize)); // page size
+            rootitem->setData(258, QVariant(1)); // current page
+            */
             sqlfilelist->appendItem(rootitem);
             pagespinner->setRange(1, pagecount);
             pagespinner->setValue(1);
@@ -807,24 +858,24 @@ long WombatSqlite::OpenSqliteFile(FXObject*, FXSelector, void*)
 long WombatSqlite::FileSelected(FXObject*, FXSelector, void*)
 {
     FXString tmpstr = sqlfilelist->getItemText(sqlfilelist->getCurrentItem());
-    curfileuserdata = fileuserdata.at(sqlfilelist->getCurrentItem());
-    //std::cout << "cur file user data: " << curfileuserdata.text() << std::endl;
     int found = tmpstr.find(" (");
     int lfound = tmpstr.find("[");
     int rfound = tmpstr.find("]");
     curfilepath = tmpstr.mid(lfound+1, rfound - lfound - 1) + tmpstr.mid(0, found);
-    //std::cout << curfilepath.text() << std::endl;
     filebuffer.open(curfilepath.text(), std::ios::in|std::ios::binary);
     filebuffer.seekg(0, filebuffer.beg);
-    //std::cout << tmpstr.mid(0, found).text() << std::endl;
-    //std::cout << tmpstr.mid(lfound+1, rfound-1).text() << std::endl;
-    //std::cout << curfilepath.text() << std::endl;
-    //std::cout << curfileuserdata.text() << std::endl;
+    curfileuserdata = fileuserdata.at(sqlfilelist->getCurrentItem());
     lfound = curfileuserdata.find_first_of("|");
     rfound = curfileuserdata.find_last_of("|");
     filetype = (uint8_t)curfileuserdata.mid(0, lfound).toUInt();
     pagesize = curfileuserdata.mid(lfound+1, rfound-1).toULong();
     curpage = curfileuserdata.mid(rfound+1, curfileuserdata.length() - rfound - 1).toULong();
+    //std::cout << "cur file user data: " << curfileuserdata.text() << std::endl;
+    //std::cout << curfilepath.text() << std::endl;
+    //std::cout << tmpstr.mid(0, found).text() << std::endl;
+    //std::cout << tmpstr.mid(lfound+1, rfound-1).text() << std::endl;
+    //std::cout << curfilepath.text() << std::endl;
+    //std::cout << curfileuserdata.text() << std::endl;
     pagespinner->setValue(curpage);
     proptable->setCurrentItem(-1, -1);
     LoadPage();
