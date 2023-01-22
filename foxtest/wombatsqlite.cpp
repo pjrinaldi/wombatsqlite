@@ -40,6 +40,7 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     asciitext->setFont(plainfont);
     asciitext->setWidth(140);
     asciitext->setText("1234567890abcdef");
+    asciitext->setHiliteBackColor(FX::colorFromName("green"));
     hsplitter->setWidth(offsettext->getWidth() + hextext->getWidth() + asciitext->getWidth() + textscrollbar->getWidth() + 16);
     proptable->setRowHeaderWidth(0);
     tablelist->setRowHeaderWidth(0);
@@ -1794,49 +1795,15 @@ long WombatSqlite::PropertySelected(FXObject*, FXSelector, void*)
         int found = offlen.find(", ");
         uint64_t curoffset = offlen.mid(0, found).toULong();
         uint64_t curlength = offlen.mid(found+1, offlen.length() - found).toULong();
-        //std::cout << "cur offset: " << curoffset << " cur length: " << curlength << std::endl;
         uint linenumber = curoffset / 16;
-        // SET HEX CURSOR
+        // SET HEX SELECTION
         hextext->setAnchorPos(curoffset*3 + linenumber);
         hextext->moveCursorAndSelect(curoffset*3 + linenumber + curlength*3 - 1, 1);
-        /*
-        // SET ASCII CURSOR
-        asciitext->setAnchorPos(curoffset + linenumber);
-        asciitext->moveCursorAndSelect(curoffset + linenumber + curlength, 1);
-        */
+        // SET ASCII HIGHLIGHT
+        asciitext->setHighlight(curoffset + linenumber, curlength);
     }
 
     return 1;
-    /*
-    if(ui->propwidget->currentRow() > -1 && ui->propwidget->currentItem() != NULL)
-    {
-        ui->tablewidget->setCurrentItem(NULL);
-        QStringList vallist = ui->propwidget->item(ui->propwidget->currentRow(), 0)->text().split(", ");
-        QTextCursor hexcursor = ui->hexedit->textCursor();
-        hexcursor.setPosition(vallist.at(0).toUInt() * 3);
-        hexcursor.setPosition((vallist.at(0).toUInt() + vallist.at(1).toUInt()) * 3 - 1, QTextCursor::KeepAnchor);
-        ui->hexedit->setTextCursor(hexcursor);
-        QTextCursor utf8cursor = ui->utf8edit->textCursor();
-        //qDebug() << "utf8 offset:" << vallist.at(0).toUInt();
-        if(vallist.at(0).toUInt() > 15)
-        {
-            uint linenumber = vallist.at(0).toUInt() / 16;
-            ui->editscrollbar->setValue(linenumber - 1);
-            utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
-            utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
-        }
-        else
-        {
-            ui->editscrollbar->setValue(0);
-            utf8cursor.setPosition(vallist.at(0).toUInt());
-            utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
-        }
-        ui->utf8edit->setTextCursor(utf8cursor);
-
-        OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
-        LengthUpdate(vallist.at(1));
-    }
-     */ 
 }
 
 long WombatSqlite::ContentSelected(FXObject*, FXSelector, void*)
