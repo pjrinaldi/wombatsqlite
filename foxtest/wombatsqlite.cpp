@@ -1797,10 +1797,17 @@ long WombatSqlite::PropertySelected(FXObject*, FXSelector, void*)
         uint64_t curoffset = offlen.mid(0, found).toULong();
         uint64_t curlength = offlen.mid(found+1, offlen.length() - found).toULong();
         uint linenumber = curoffset / 16;
+        // SET SCROLLBAR
+        textscrollbar->setPosition(linenumber);
+        // SET OFFSET
+        offsettext->moveCursorRowColumn(linenumber, 0);
         // SET HEX SELECTION
-        hextext->setAnchorPos(curoffset*3 + linenumber);
-        hextext->moveCursorAndSelect(curoffset*3 + linenumber + curlength*3 - 1, 1);
+        hextext->moveCursor(curoffset*3 + linenumber);
+        hextext->setSelection(curoffset * 3 + linenumber, curlength*3 - 1);
+        //hextext->setAnchorPos(curoffset*3 + linenumber);
+        //hextext->moveCursorAndSelect(curoffset*3 + linenumber + curlength*3 - 1, 1);
         // SET ASCII HIGHLIGHT
+        asciitext->moveCursor(curoffset + linenumber);
         asciitext->setHighlight(curoffset + linenumber, curlength);
         StatusUpdate("Offset: 0x" + FXString::value("%05x", curoffset) + " | Length: " + FXString::value(curlength));
     }
@@ -1810,10 +1817,75 @@ long WombatSqlite::PropertySelected(FXObject*, FXSelector, void*)
 
 long WombatSqlite::ContentSelected(FXObject*, FXSelector, void*)
 {
+    //proptable->setCurrentItem(-1, -1, true);
+    proptable->selectRow(-1, true);
     tablelist->selectRow(tablelist->getCurrentRow());
+    if(tablelist->getCurrentRow() > -1 && !tablelist->getItemText(tablelist->getCurrentRow(), 3).empty())
+    {
+        FXString offlen = tablelist->getItemText(tablelist->getCurrentRow(), 3);
+        int found = offlen.find(", ");
+        uint64_t curoffset = offlen.mid(0, found).toULong();
+        uint64_t curlength = offlen.mid(found+1, offlen.length() - found).toULong();
+        //std::cout << "curoffset: " << curoffset << " curlength: " << curlength << std::endl;
+        uint linenumber = curoffset / 16;
+        // SET SCROLLBAR
+        textscrollbar->setPosition(linenumber);
+        // SET OFFSET
+        offsettext->moveCursorRowColumn(linenumber, 0);
+        // SET HEX SELECTION
+        hextext->moveCursor(curoffset*3 + linenumber);
+        hextext->setSelection(curoffset * 3 + linenumber, curlength*3 - 1);
+        //hextext->setAnchorPos(curoffset * 3 + linenumber);
+        //hextext->moveCursorAndSelect(curoffset * 3 + linenumber + curlength * 3 - 1, 1);
+        // SET ASCII HIGHLIGHT
+        asciitext->moveCursor(curoffset + linenumber);
+        asciitext->setHighlight(curoffset + linenumber, curlength);
+        //asciitext->setCursorPos(curoffset + linenumber);
+        StatusUpdate("Offset: 0x" + FXString::value("%05x", curoffset) + " | Length: " + FXString::value(curlength));
+    }
 
     return 1;
 }
+/*
+    if(ui->tablewidget->currentRow() > -1 && ui->tablewidget->currentItem() != NULL)
+    {
+        ui->propwidget->setCurrentItem(NULL);
+        QStringList vallist = ui->tablewidget->item(ui->tablewidget->currentRow(), 3)->text().split(", ");
+        if(vallist.count() == 2)
+        {
+            QTextCursor hexcursor = ui->hexedit->textCursor();
+            hexcursor.setPosition(vallist.at(0).toUInt() * 3);
+            hexcursor.setPosition((vallist.at(0).toUInt() + vallist.at(1).toUInt()) * 3 - 1, QTextCursor::KeepAnchor);
+            ui->hexedit->setTextCursor(hexcursor);
+
+            QTextCursor utf8cursor = ui->utf8edit->textCursor();
+            if(vallist.at(0).toUInt() > 15)
+            {
+                uint linenumber = vallist.at(0).toUInt() / 16;
+                ui->editscrollbar->setValue(linenumber - 1);
+                uint length = vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt() + vallist.at(1).toUInt() / 16;
+                if(16 < ((vallist.at(0).toUInt() % 16) + vallist.at(1).toUInt()) && ((vallist.at(0).toUInt() % 16) + vallist.at(1).toUInt()) < 48)
+                    length++;
+                //qDebug() << "linenumber:" << linenumber;
+                utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber);
+                utf8cursor.setPosition(length, QTextCursor::KeepAnchor);
+                //utf8cursor.setPosition(vallist.at(0).toUInt() + linenumber + vallist.at(1).toUInt() + vallist.at(1).toUInt() / 16, QTextCursor::KeepAnchor);
+            }
+            else
+            {
+                // JUST NEED TO FIGURE OUT IF THIS SMALL ONE WRAPS TO A NEW LINE, AND THEN I NEED TO ADD 1 TO IT...
+		ui->editscrollbar->setValue(0);
+                utf8cursor.setPosition(vallist.at(0).toUInt());
+                utf8cursor.setPosition(vallist.at(0).toUInt() + vallist.at(1).toUInt(), QTextCursor::KeepAnchor);
+            }
+            ui->utf8edit->setTextCursor(utf8cursor);
+
+            OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
+            LengthUpdate(vallist.at(1));
+        }
+    }
+
+ */ 
 
     /*
 void WombatSqlite::PopulateChildKeys(libregf_key_t* curkey, FXTreeItem* curitem, libregf_error_t* regerr)
