@@ -15,27 +15,18 @@ WombatSqlite::WombatSqlite(FXApp* a):FXMainWindow(a, "Wombat SQLite Forensics", 
     hsplitter = new FXSplitter(vsplitter, SPLITTER_VERTICAL);
     proptable = new FXTable(vsplitter, this, ID_PROPTABLE, TABLE_COL_SIZABLE);
     statusbar = new FXStatusBar(mainframe, LAYOUT_BOTTOM|LAYOUT_LEFT|LAYOUT_FILL_X);
-    //vsplitter2 = new FXSplitter(hsplitter, SPLITTER_NORMAL, LAYOUT_FILL_X|LAYOUT_FILL_Y);
     editorframe = new FXHorizontalFrame(hsplitter, LAYOUT_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y);
     tablelist = new FXTable(hsplitter, this, ID_TABLESELECT, TABLE_COL_SIZABLE|LAYOUT_FILL_X);
-    //offsettext = new FXText(vsplitter2, this, ID_OFFTEXT, LAYOUT_FILL_Y);
-    //hextext = new FXText(vsplitter2, this, ID_HEXTEXT, LAYOUT_FILL_Y);
-    //asciitext = new FXText(vsplitter2, this, ID_ASCTEXT, LAYOUT_FILL_Y);
     offsettext = new FXText(editorframe, this, ID_OFFTEXT, LAYOUT_FIX_WIDTH|LAYOUT_FILL_Y);
     hextext = new FXText(editorframe, this, ID_HEXTEXT, LAYOUT_FIX_WIDTH|LAYOUT_FILL_Y);
     asciitext = new FXText(editorframe, this, ID_ASCTEXT, LAYOUT_FIX_WIDTH|LAYOUT_FILL_Y);
     offsettext->setScrollStyle(VSCROLLER_NEVER|HSCROLLER_NEVER);
     hextext->setScrollStyle(VSCROLLER_NEVER|HSCROLLER_NEVER);
     asciitext->setScrollStyle(VSCROLLER_NEVER|HSCROLLER_NEVER);
-    //asciitext->setScrollStyle(VSCROLLER_ALWAYS|HSCROLLER_NEVER);
     textscrollbar = new FXScrollBar(editorframe, this, ID_SCROLLBAR, LAYOUT_FIX_WIDTH|LAYOUT_FILL_Y);
-    //textscrollbar = new FXScrollBar(vsplitter2, this, ID_SCROLLBAR, LAYOUT_FIX_WIDTH);
     textscrollbar->setWidth(15);
-    //textscrollbar = asciitext->verticalScrollBar();
-    //textscrollbar->setSelector(ID_SCROLLBAR);
     plainfont = new FXFont(a, "monospace");
     sqlfilelist->setWidth(this->getWidth() / 4);
-    //vsplitter2->setHeight(this->getHeight() / 2);
     editorframe->setHeight(this->getHeight() / 2);
     offsettext->setEditable(false);
     offsettext->setWidth(55);
@@ -171,27 +162,12 @@ long WombatSqlite::PageChanged(FXObject*, FXSelector, void*)
 
 long WombatSqlite::ScrollChanged(FXObject*, FXSelector, void*)
 {
-    //std::cout << "scroll width: " << asciitext->verticalScrollBar()->getWidth() << std::endl;
-    std::cout << "text scroll: " << textscrollbar->getPosition() << std::endl;
-    //asciitext->verticalScrollBar()->setPosition(textscrollbar->getPosition(), true);
-    //std::cout << "ascii scroll pos: " << asciitext->verticalScrollBar()->getPosition() << std::endl;
-    //asciitext->setCursorRow(textscrollbar->getPosition());
-    //asciitext->setTopLine(textscrollbar->getPosition());
-    //asciitext->setPosition(textscrollbar->getPosition(), 0);
-    //asciitext->update();
-    //asciitext->verticalScrollBar()->update();
-    //asciitext->setPosition(asciitext->nextRow(textscrollbar->getPosition()), 0);
-    //asciitext->update();
-
+    offsettext->verticalScrollBar()->setPosition(textscrollbar->getPosition()*18, true);
+    hextext->verticalScrollBar()->setPosition(textscrollbar->getPosition()*18, true);
+    asciitext->verticalScrollBar()->setPosition(textscrollbar->getPosition()*18, true);
 
     return 1;
 }
-/*
- * // setPosition();
-    ui->offsetedit->verticalScrollBar()->setValue(linecount);
-    ui->hexedit->verticalScrollBar()->setValue(linecount);
-    ui->utf8edit->verticalScrollBar()->setValue(linecount);
-*/
 
 long WombatSqlite::TagMenu(FXObject*, FXSelector, void* ptr)
 {
