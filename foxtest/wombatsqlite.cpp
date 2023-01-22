@@ -961,7 +961,7 @@ void WombatSqlite::PopulatePageContent(uint8_t* pagearray)
     int linerem = pagesize % 16;
     if(linerem > 0)
         linecount++;
-    std::cout << "linecount: " << linecount << std::endl;
+    //std::cout << "linecount: " << linecount << std::endl;
     offsettext->verticalScrollBar()->setRange(linecount - 1);
     offsettext->verticalScrollBar()->setLine(1);
     hextext->verticalScrollBar()->setRange(linecount - 1);
@@ -1788,6 +1788,23 @@ void WombatSqlite::AlignColumn(FXTable* curtable, int col, FXuint justify)
 long WombatSqlite::PropertySelected(FXObject*, FXSelector, void*)
 {
     proptable->selectRow(proptable->getCurrentRow());
+    if(proptable->getCurrentRow() > -1 && !proptable->getItemText(proptable->getCurrentRow(), 0).empty())
+    {
+        FXString offlen = proptable->getItemText(proptable->getCurrentRow(), 0);
+        int found = offlen.find(", ");
+        uint64_t curoffset = offlen.mid(0, found).toULong();
+        uint64_t curlength = offlen.mid(found+1, offlen.length() - found).toULong();
+        //std::cout << "cur offset: " << curoffset << " cur length: " << curlength << std::endl;
+        uint linenumber = curoffset / 16;
+        // SET HEX CURSOR
+        hextext->setAnchorPos(curoffset*3 + linenumber);
+        hextext->moveCursorAndSelect(curoffset*3 + linenumber + curlength*3 - 1, 1);
+        /*
+        // SET ASCII CURSOR
+        asciitext->setAnchorPos(curoffset + linenumber);
+        asciitext->moveCursorAndSelect(curoffset + linenumber + curlength, 1);
+        */
+    }
 
     return 1;
     /*
