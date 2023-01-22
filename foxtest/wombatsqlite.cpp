@@ -152,24 +152,6 @@ long WombatSqlite::PageChanged(FXObject*, FXSelector, void*)
         curpage = cpage;
         LoadPage();
     }
-    /*
-    if(ui->treewidget->currentItem() != NULL)
-    {
-        ui->propwidget->setCurrentItem(NULL);
-        ui->treewidget->currentItem()->setData(258, cpage);
-        ui->tablewidget->clearContents();
-        curpage = cpage;
-        LoadPage();
-    }
-
-    fileuserdata.append(FXString::value(filetype) + "|" + FXString::value(pagesize) + "|" + FXString::value(1));
-    curfileuserdata = fileuserdata.at(sqlfilelist->getCurrentItem());
-    int lfound = curfileuserdata.find_first_of("|");
-    int rfound = curfileuserdata.find_last_of("|");
-    filetype = (uint8_t)curfileuserdata.mid(0, lfound).toUInt();
-    pagesize = curfileuserdata.mid(lfound+1, rfound-1).toULong();
-    curpage = curfileuserdata.mid(rfound+1, curfileuserdata.length() - rfound - 1).toULong();
-     */ 
 
     return 1;
 }
