@@ -121,6 +121,7 @@ class WombatSqlite : public FXMainWindow
 	FXButton* aboutbutton;
         FXStatusBar* statusbar;
         FXFont* plainfont;
+
         FXString prevsqlitepath;
         FXString sqlitefilepath;
         FXString curfilepath;
