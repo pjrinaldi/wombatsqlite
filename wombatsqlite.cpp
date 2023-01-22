@@ -1838,8 +1838,14 @@ long WombatSqlite::ContentSelected(FXObject*, FXSelector, void*)
         //hextext->setAnchorPos(curoffset * 3 + linenumber);
         //hextext->moveCursorAndSelect(curoffset * 3 + linenumber + curlength * 3 - 1, 1);
         // SET ASCII HIGHLIGHT
-        asciitext->moveCursor(curoffset + linenumber);
-        asciitext->setHighlight(curoffset + linenumber, curlength);
+        if(curoffset > 15)
+        {
+        }
+        else
+        {
+            asciitext->moveCursor(curoffset + linenumber);
+            asciitext->setHighlight(curoffset + linenumber, curlength);
+        }
         //asciitext->setCursorPos(curoffset + linenumber);
         StatusUpdate("Offset: 0x" + FXString::value("%05x", curoffset) + " | Length: " + FXString::value(curlength));
     }
@@ -1847,12 +1853,6 @@ long WombatSqlite::ContentSelected(FXObject*, FXSelector, void*)
     return 1;
 }
 /*
-    if(ui->tablewidget->currentRow() > -1 && ui->tablewidget->currentItem() != NULL)
-    {
-        ui->propwidget->setCurrentItem(NULL);
-        QStringList vallist = ui->tablewidget->item(ui->tablewidget->currentRow(), 3)->text().split(", ");
-        if(vallist.count() == 2)
-        {
             QTextCursor hexcursor = ui->hexedit->textCursor();
             hexcursor.setPosition(vallist.at(0).toUInt() * 3);
             hexcursor.setPosition((vallist.at(0).toUInt() + vallist.at(1).toUInt()) * 3 - 1, QTextCursor::KeepAnchor);
@@ -1882,9 +1882,6 @@ long WombatSqlite::ContentSelected(FXObject*, FXSelector, void*)
 
             OffsetUpdate(QString::number(vallist.at(0).toUInt(), 16));
             LengthUpdate(vallist.at(1));
-        }
-    }
-
  */ 
 
     /*
