@@ -8,6 +8,8 @@
 #include <sstream>
 #include <cmath>
 #include <bitset>
+#include <unistd.h>
+#include <cstdint>
 
 //std::string ConvertUnixTimeToHuman(uint32_t unixtime);
 
